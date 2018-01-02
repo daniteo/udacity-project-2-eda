@@ -155,19 +155,36 @@ ggplot(aes(x = contb_receipt_dt_month), data = USACampaign)+
 
 ```{r Distribuicão dos valores das contribuições, echo=FALSE}
 
-amt1 <- ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
-  geom_histogram(bins=50)+
-  xlim(0,quantile(USACampaign$contb_receipt_amt, 0.9))+
-  ylim(0, 160000)+
+USACampaign.by_contb <- USACampaign %>%
+                      group_by(contbr_nm) %>%
+                      summarise(count = n(),
+                                soma = sum(contb_receipt_amt)) %>%
+                      arrange(desc(soma))
+
+head(USACampaign.by_contb)
+
+ggplot(aes(x = contbr_nm, y=soma), data = USACampaign.by_contb)+
+  geom_bar(stat = 'identity')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-amt2 <- ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
-  geom_histogram(bins=50)+
-  ylim(0, 160000)+
-  scale_x_log10(breaks=c(1,10,100,1000,10000))+
+ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
+  geom_histogram(bins=10000)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-grid.arrange(amt1, amt2, ncol = 2)
+ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
+  geom_histogram(bins=100)+
+  xlim(0,quantile(USACampaign$contb_receipt_amt, 0.99))+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
+  geom_histogram(bins=100)+
+  xlim(0,1000)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(aes(x = contb_receipt_amt), data = USACampaign)+
+  geom_histogram(bins=100)+
+  scale_x_log10()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -175,9 +192,9 @@ grid.arrange(amt1, amt2, ncol = 2)
 USACampaign.by_city <- USACampaign %>%
                       group_by(city) %>%
                       summarise(count = n()) %>%
-                      arrange(count)
+                      arrange(desc(count))
 
-main_city <- tail(USACampaign.by_city$city, 10)
+main_city <- head(USACampaign.by_city$city, 10)
 
 ggplot(aes(x = city), data = subset(USACampaign, city %in% main_city))+
   geom_bar(stat = 'count')+
@@ -234,7 +251,7 @@ As datas de contribuição carregadas originalmente como `caracter`, foram conve
 Conforme apresentado na seção de tratamento de dados, fiz uma ajuste nos nomes das cidades para eleminar as cidades iguais registradas com grafias diferentes.
 
 # Seção de Gráficos Bivariados
-```{r echo=FALSE, Bivariate_Plots}
+```{r echo=FALSE, Valor de contibuições para cada candidato}
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   geom_point()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -245,12 +262,20 @@ ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
-  geom_point(alpha = 1/20, position = 'jitter')+
-  ylim(0, quantile(USACampaign$contb_receipt_amt, 0.99))+
-  scale_y_continuous(breaks = seq(0, 250, 2500))+
+  geom_point(alpha = 1/50, position = 'jitter')+
+  scale_y_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)),
+                     breaks = seq(0, 3000, 250))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+```{r Valor médio das contribuições, echo=FALSE}
+ggplot(aes(x=cand_nm, y=contb_receipt_amt), data = USACampaign)+
+#  geom_bar(stat = 'summary', fun.y = median)+
+  geom_bar(stat = 'summary', fun.y = mean, fill = I('#AACC99'), position = "dodge")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
 
 # Análise Bivariada
 
