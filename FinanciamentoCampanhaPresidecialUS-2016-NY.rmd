@@ -236,6 +236,7 @@ Conforme apresentado na seção de tratamento de dados, fiz uma ajuste nos nomes
 # Seção de Gráficos Bivariados
 ```{r echo=FALSE, Bivariate_Plots}
 
+
 ```
 
 # Análise Bivariada
