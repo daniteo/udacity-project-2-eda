@@ -18,15 +18,16 @@ ESTADO_EUA = "TX"
 NOME_ARQUIVO = "P00000001-"+ESTADO_EUA+".csv"
 NOME_ARQUIVO_TRATADO = "P00000001-"+ESTADO_EUA+"_tratado.csv"
 
-def recuperar_dados_cidade(zip_number):
+def recuperar_dados_cidade_pelo_cep(cep):
     """
     Usa um biblioteca de zipcode dos EUA pra equalizar os nomes de cidades
     da base de dados e obter longitude e latidude.
     """
-    if zip_number is not None or zip_number != "":
-        zip_number = zip_number[0:5]
+    if cep is not None or cep != "":
+        #Utiliza apenas os 5 primeiros digitos do CEP
+        numero_cep = cep[0:5]
         try:
-            zip = zipcode.isequal(zip_number)
+            zip = zipcode.isequal(numero_cep)
             if zip is not None:
                 return zip.city, zip.lon, zip.lat
             else:
@@ -37,8 +38,13 @@ def recuperar_dados_cidade(zip_number):
         return "", "", ""
 
 def tratar_valor_contribuicao(valor_contribuicao):
+    """
+    Converte os valores negativos em positivos e elimina os registros com valor 0
+    """
     valor_contribuicao = float(valor_contribuicao)
     valor_contribuicao = abs(valor_contribuicao)
+    if (valor_contribuicao == 0):
+        return None
     return valor_contribuicao
 
 def tratar_data_contribuicao(data):
@@ -69,6 +75,8 @@ def tratar_dados_financiamento(dados, candidatos, comite):
     for data in dados:
         #Trata valores de contribuições negativas
         valor = tratar_valor_contribuicao(data['contb_receipt_amt'])
+        if valor is None:
+            continue
         data['contb_receipt_amt'] = valor
 #        print(posicao)
 
@@ -83,7 +91,7 @@ def tratar_dados_financiamento(dados, candidatos, comite):
         data['contb_receipt_dt_year'] = ano
 
         #Recupera dados das cidades com base no CEP
-        city, lon, lat = recuperar_dados_cidade(data['contbr_zip'])
+        city, lon, lat = recuperar_dados_cidade_pelo_cep(data['contbr_zip'])
         data['city'] = city
         data['lon'] = lon
         data['lat'] = lat
@@ -140,7 +148,7 @@ def grava_dados_financiamento(arquivo_saida, dados_tratados, header):
         for row in dados_tratados:
             writer.writerow(row)
 
-if __name__ == "__main__":
+def executarTratamento():
     header, dados = carregar_dados_financiamento(NOME_ARQUIVO)
     candidatos = carregar_dados_candidatos("cn.txt")
     comite = carregar_dados_comite("cm.txt")
@@ -148,3 +156,6 @@ if __name__ == "__main__":
     dados_tratados = tratar_dados_financiamento(dados, candidatos, comite)
     pprint.pprint(dados_tratados[0])
     grava_dados_financiamento(NOME_ARQUIVO_TRATADO, dados_tratados, header)
+
+if __name__ == "__main__":
+    executarTratamento()
