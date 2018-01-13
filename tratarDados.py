@@ -54,6 +54,34 @@ def tratar_data_contribuicao(data):
     ano = data_separada[2]
     return dia, mes, ano
 
+def tratar_ocupacao(ocupacao):
+    if ocupacao in ["OWNER", "SELF", "BUSINESS OWNER", "SMALL BUSINESS OWNER","SELF EMPLOYED"]:
+        return "SELF-EMPLOYED"
+    if ocupacao in ["REALTOR", "REAL ESTATE BROKER"]:
+        return "REAL ESTATE"
+    if ocupacao == "ATTORNEY":
+        return "LAWYER"
+    if ocupacao in ["PROGRAMMER","WEB DEVELOPER"]:
+        return "SOFTWARE DEVELOPER"
+    if ocupacao == "PROFESSOR":
+        return "TEACHER"
+    if ocupacao == "R.N.":
+        return "RN"
+    if ocupacao == "NONE":
+        return "NOT EMPLOYED"
+    if ocupacao == "ACCOUNTING":
+        return "ACCOUNTANT"
+    if ocupacao == "INSURANCE AGENT":
+        return "INSURANCE"
+    if ocupacao == "INFORMATION REQUESTED PER BEST EFFORTS":
+        return "INFORMATION REQUESTED"
+    if ocupacao in ["N/A"]:
+        return ""
+    if "NURSE" in ocupacao:
+        return "NURSE"
+    return ocupacao
+
+
 def adicionar_novos_titulos(header):
     header.append('city')
     header.append('lon')
@@ -79,6 +107,8 @@ def tratar_dados_financiamento(dados, candidatos, comite):
             continue
         data['contb_receipt_amt'] = valor
 #        print(posicao)
+
+        data['contbr_occupation'] = tratar_ocupacao(data['contbr_occupation'])
 
         data['cmte_nm'] = comite[data['cmte_id']][1]
         data['cmte_dsgn'] = comite[data['cmte_id']][8]
