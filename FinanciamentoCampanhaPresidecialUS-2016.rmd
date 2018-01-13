@@ -23,67 +23,98 @@ library(dplyr)
 
 Para este projeto escolhi uma das bases de dados sugeridas pela Udacity: [Financiamento da Campanha Presidencial dos EUA de 2016](http://classic.fec.gov/disclosurep/pnational.do). 
 
-A idéia inicial era de se fazer a analise do estado dde NY, no entanto havia uma discrepancia muito grande nas contibuições uma vez que o comite "HILLARY VICTORY FUND" teve quase metade (47%) do valor de contribuições referentes a este estado em apenas 23 contribuições das 649.460 contribuições registradas, todas acima de U$ 100.000. A maior contribuição abaixo deste valor de U$ 100.000 foi de U$ 11.816,25. A remoção dos *outliers* traria um dataset que não representaria o conjunto de dados do estado. 
+A idéia inicial era de se fazer a analise do estado dde NY, no entanto havia uma discrepancia muito grande nas contibuições uma vez que o comite "HILLARY VICTORY FUND" teve quase metade (45%) do valor de contribuições referentes a este estado em apenas 23 contribuições das 649.460 contribuições registradas, todas acima de U$ 100.000. Apenas este comite realizou contribuições acima deste valor. A maior contribuição abaixo deste valor de U$ 100.000 foi de U$ 11.816,25. A remoção dos *outliers* traria um dataset que não representaria o conjunto de dados do estado. 
 
-```{r Dados auxiliares, echo = FALSE}
+```{r Carga dados NY, echo = FALSE, warning = FALSE}
 # Carga dos dados
 # Carga dos dados dos comites baixados do site do FEC
-cmte_data <- read.delim('cm.txt', sep = '|', header = F, col.names = c("cmte_id","CMTE_NM","TRES_NM",
+cmte_data <- read.delim('cm.txt', sep = '|', header = F, col.names = c("cmte_id","cmte_nm","TRES_NM",
                                                                      "CMTE_ST1","CMTE_ST1", "CMTE_CITY",
-                                                                     "CMTE_ST","CMTE_ZIP","CMTE_DSGN",
+                                                                     "CMTE_ST","CMTE_ZIP","cmte_dsgn",
                                                                      "CMTE_TP","CMTE_PTY_AFFILIATION",
                                                                      "CMTE_FILING_FREQ",
                                                                      "ORG_TP","CONNECTED_ORG_NM","CAND_ID"))
 
-cmte_data <- cmte_data[c("cmte_id","CMTE_NM","CMTE_DSGN")]
-```
+cmte_data <- cmte_data[c("cmte_id","cmte_nm","cmte_dsgn")]
 
-```{r Outliers NY, echo = FALSE}
 #Carga dos dodos de financiamento de NY
-USACampaign <- read.csv('P00000001-NY.csv', header = T, as.is = T)
+USACampaign <- read.csv('P00000001-NY.csv', header = T)
 USACampaign <- left_join(USACampaign, cmte_data, by = c("cmte_id"))
 rm(cmte_data)
+```
 
+```{r Outliers NY, warning = FALSE}
+#Verifica a distribuição dos valores de controbuições do dataset
 summary(USACampaign$contb_receipt_amt)
+
 USACampaign$contb_receipt_amt <- abs(USACampaign$contb_receipt_amt)
 USACampaign$contb_range <- cut(USACampaign$contb_receipt_amt, c(0,100,500,2000,50000,max(USACampaign$contb_receipt_amt)))
 
+#Verifica contribuintes com contribuições superiores a U$ 100.000
 USACampaign[USACampaign$contb_receipt_amt >= 100000,]$contbr_nm
+#Valor máximo abaixo de U$ 100.000
 max(USACampaign[USACampaign$contb_receipt_amt < 100000,]$contb_receipt_amt)
 
-sum(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",]$contb_receipt_amt)
-sum(USACampaign$contb_receipt_amt)*100
+sum(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",]$contb_receipt_amt)/sum(USACampaign$contb_receipt_amt)*100
 
 count(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",])
 
 USACampaign$hillary_comitte <- ifelse(USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED", "Y", "N")
 
-ggplot(aes(x=contb_range), 
+#Contribuições HILLARY VICTORY vs OTHERS - Distribuição dos valores e total de contribuição
+g1 <- ggplot(aes(x=hillary_comitte), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle('Comparação das contribuições entre comite da Hillary e outros')
 
 
-ggplot(aes(x=contb_range, y=contb_receipt_amt), 
+g2 <- ggplot(aes(x=hillary_comitte, y=contb_receipt_amt), 
        data = USACampaign)+
   geom_bar(stat = 'summary', fun.y = 'sum')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle('Comparação da soma das contribuições entre comite da Hillary e outros')
+
+#Distribuição de valores entre as faixas vs total dos valores por faixa
+grid.arrange(g1, g2, ncol = 2)
+
+g3 <- ggplot(aes(x=contb_range), 
+       data = subset(USACampaign, !is.na(contb_range)))+
+  geom_bar(stat = 'count')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle('Distribuição das contribuições em NY')
+
+
+g4 <- ggplot(aes(x=contb_range, y=contb_receipt_amt), 
+       data = subset(USACampaign, !is.na(contb_range)))+
+  geom_bar(stat = 'summary', fun.y = 'sum')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle('Distribuição das contribuições em NY')
+
+grid.arrange(g3, g4, ncol = 2)
+
+# plotbox com e sem contribuições com valores superiores a R$ 100.000,00
+ggplot(aes(y=contb_receipt_amt, x=cand_nm), 
+       data = USACampaign)+
+  geom_boxplot()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(aes(y=contb_receipt_amt, x=cand_nm), 
        data = subset(USACampaign, contbr_nm != "HILLARY VICTORY FUND - UNITEMIZED"))+
-  geom_boxplot()
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-sum(USACampaign[USACampaign$hillary_comitte == "Y",]$contb_receipt_amt)
-sum(USACampaign[USACampaign$hillary_comitte == "N",]$contb_receipt_amt)
-
-# plotbox com e sem contribuições altas
-
+rm(g1, g2, g3, g4)
 
 ```
 
 Esta discrepancia traria um prejuizo na avaliação das contribuições entre os candidatos e restringiria as analises dos dados. Desta forma optei por fazer a analise das contribuições feitas pelos eleitores do estado do TX, que traz uma distribuição mais homogenea nas contribuições.
 
-```{r Verificação de dados}
+========================================================
+
+## Analise do dataset do estado do Texas
+
+```{r Carga dos dados de contribuição do TX sem tratamento, echo  = FALSE}
 USACampaign <- read.csv('P00000001-TX.csv', header = T, as.is = T)
 
 # Verifica quantidade de registros com valores de contribuição negativa
@@ -108,6 +139,8 @@ max(USACampaign[USACampaign$contb_receipt_amt < 100000,]$contb_receipt_amt)
 USACampaign$cmte_id <- as.factor(USACampaign$cmte_id)
 USACampaign$cand_id <- as.factor(USACampaign$cand_id)
 USACampaign$cand_nm <- as.factor(USACampaign$cand_nm)
+USACampaign$contbr_occupation <- as.factor(USACampaign$contbr_occupation)
+summary(USACampaign$contbr_occupation)
 USACampaign$contb_receipt_dt_month <- factor(USACampaign$contb_receipt_dt_month, ordered = T, 
                                                 levels=c("JAN", "FEB", "MAR", "APR", "MAY", "JUN", 
                                                          "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"))
@@ -120,7 +153,6 @@ dim(USACampaign)
 names(USACampaign)
 str(USACampaign)
 summary(USACampaign)
-
 
 ```
 
@@ -166,7 +198,7 @@ ggplot(aes(x = contb_receipt_dt_month), data = USACampaign)+
   facet_wrap( ~contb_receipt_dt_year, ncol = 4)+
   ggtitle('Distribuição das contribuições por mes')
 ```
-Quando gerei o primeiro gráfico com a distribuição dos valores, percebi uma contagem muito grande para as ocorrencias de menor valor (mais de 350.00). Reduzi então o binwidth em 10x para que as barras contivessem menos valores na mesma faixa uma vez que para valores baixos temos uma gama de valores muito grande. Depois reduzi o limite do eixo x com o objetivo de ter uma maior visibilidade das distribuições.
+Em sequencia realizei uma análise da distribuição dos valores de contribuições.
 
 ```{r Distribuição das contribuições por valor, echo = FALSE}
 
@@ -175,7 +207,11 @@ ggplot(aes(x=contb_receipt_amt),
   geom_histogram(binwidth = 100)+
   scale_x_continuous(breaks = seq(0, 15000, 2500))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+Quando gerei o primeiro gráfico com a distribuição dos valores, percebi uma contagem muito grande para as ocorrencias de menor valor (mais de 350.00). Reduzi então o binwidth em 10x para que as barras contivessem menos valores na mesma faixa uma vez que para valores baixos temos uma gama de valores muito grande. Depois reduzi o limite do eixo x com o objetivo de ter uma maior visibilidade das distribuições.
+
+```{r Distribuição das contribuições por valor 2, echo = FALSE}
 ggplot(aes(x=contb_receipt_amt), 
        data = USACampaign)+
   geom_histogram(binwidth = 10)+
@@ -214,6 +250,7 @@ ggplot(aes(x=contb_receipt_amt_range),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
 
 
 ```{r Distribuição das contribuições por partido, echo = FALSE}
@@ -299,7 +336,7 @@ ggplot(aes(x = cand_nm), data = subset(USACampaign, contbr_occupation %in% top3_
 
 ### Qual é a estrutura do conjunto de dados?
 
-O conjunto de dados possui 649443 registros de contribuições para o estado de NY, com 18 atributos cada.
+O conjunto de dados possui  registros de contribuições para o estado de TX, com 28 atributos no arquivo tratado e 18 no arquivo original.
 
 ### Quais são os principais atributos de interesse deste conjunto de dados?
 
@@ -307,17 +344,34 @@ Os principais atributos deste conjunto de dados são os candidatos (*cand_nm*) e
 
 ### Quais outros atributos você acha que podem lhe auxiliar na investigação destes atributos de interesse?
 
+Atributos realcionados a origem das contribuições serão muito úteis nesta analise. Entre elas estão:
+
+- Nome do comite
+- Nome do contribuinte
+- Data de contribuição
+- Ocupação do contribuinte
+- Cidade do contribuinte
+
+Além destas existem variáveis importantes como o partido do candidato.
+
 ### Você criou novas variáveis a partir dos atributos existentes no conjunto de dados?
 
-Sim. Foram criados variaveis com os componentes da data de contribuição (dia, mês e ano) e incorporados dados do dataset de CEP (zipcode): cidade, longitude e latitude.
+Sim. Foram criados as seguintes variaveis: 
+ - A partir da data, criei colunas com os componentes da data de contribuição (dia, mês e ano)
+ - Foram incorporados dados do dataset de CEP (zipcode): cidade, longitude e latitude 
+ - Foi adicionada uma coluna com faixas dos valores doados.
+ - A partir da base de dados dos candidatos (obtido na FEC), foi incorporado o partido do candidato
+ - A partir da base de dados dos comites (obtido na FEC), foi incorporado o nome do comite
 
 ### Dos atributos investigados, distribuições incomuns foram encontradas? Você aplicou operações nos dados para limpá-los, ajustá-los ou mudar a forma dos dados? Se sim, por quê?
 
 Foram realizados tratamentos nos valores de contribuição. Para os valores negativos, foi considerado o valor absoluto. As contribuições zeradas foram eliminadas.
 
-As datas de contribuição carregadas originalmente como `caracter`, foram convertidas para `Date`.
+As datas de contribuição carregadas originalmente como `caracter`, foram convertidas para `Date` e quebrada em colunas separadas para dia, mes e ano.
 
-Conforme apresentado na seção de tratamento de dados, fiz uma ajuste nos nomes das cidades para eleminar as cidades iguais registradas com grafias diferentes.
+Conforme apresentado na seção de tratamento de dados, fiz uma ajuste nos nomes das cidades para eleminar as cidades iguais registradas com grafias diferentes. O mesmo tratamento foi realizado para a ocupação dos contribuintes.
+
+Todos os tratamentos foram realizados num script python a parte (`tratarDados.py`).
 
 # Seção de Gráficos Bivariados
 
