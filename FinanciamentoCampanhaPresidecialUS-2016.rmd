@@ -268,18 +268,18 @@ ggplot(aes(x=party, y=contb_receipt_amt),
 ```
 
 
-```{r Distribuição por comite, echo = FALSE}
+```{r Distribuição por candidato, echo = FALSE}
 
-USACampaign.by_cmte <- USACampaign %>%
-                      group_by(cmte_nm) %>%
+USACampaign.by_candidate <- USACampaign %>%
+                      group_by(cand_nm) %>%
                       summarise(count = n()) %>%
                       arrange(desc(count))
 
-comite_ordered <- USACampaign.by_cmte$cmte_nm
+comite_ordered <- USACampaign.by_candidate$cand_nm
 
-USACampaign$cmte_nm <- factor(USACampaign$cmte_nm, comite_ordered)
+USACampaign$cand_nm <- factor(USACampaign$cand_nm, comite_ordered)
 
-ggplot(aes(x=cmte_nm), 
+ggplot(aes(x=cand_nm), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -308,21 +308,7 @@ ggplot(aes(x=city_ordered),
 ```
 
 
-```{r Contirbuições por candidato, echo=FALSE}
-USACampaign.by_cand <- USACampaign %>%
-                       group_by(cand_nm) %>%
-                       summarise(qtde = n(),
-                       total_valor = sum(contb_receipt_amt),
-                       media_valor = mean(contb_receipt_amt),
-                       mediana_valor = median(contb_receipt_amt)) %>% 
-                       arrange(qtde)
-
-ggplot(aes(x = cand_nm), data = USACampaign)+
-  geom_freqpoly(stat = 'count')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-```{r echo=FALSE}
+```{r Distribuicao por ocupação, echo=FALSE}
 top3_occupation = head(unique(USACampaign$contbr_occupation), 3)
 
 ggplot(aes(x = cand_nm), data = subset(USACampaign, contbr_occupation %in% top3_occupation))+
@@ -381,7 +367,7 @@ Aqui fiz uma analise das distriuição dos valores ao longo do tempo. No primeir
 ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
   geom_point(alpha = 1/20)+
-  scale_x_date(date_breaks = "3 months", 
+  scale_x_date(date_breaks = "2 months", 
                date_minor_breaks = "1 months", 
                date_labels = "%b/%Y")+
   scale_y_continuous(breaks = seq(0, 17500, 1000))+
@@ -389,11 +375,10 @@ ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt),
   ggtitle('Distribuição das contribuições no período')
 
 
-ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
+ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt, color = cand_nm), 
        data = USACampaign)+
   geom_point(alpha = 1/50)+
-  scale_x_date(date_breaks = "3 months", 
-               date_minor_breaks = "1 months", 
+  scale_x_date(date_breaks = "1 months", 
                date_labels = "%b/%Y",
                limits = as.Date(c("2016-01-01","2016-12-31")))+
   scale_y_continuous(breaks = seq(0, 6000, 500), limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))+
@@ -426,25 +411,52 @@ ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
 ggplot(aes(x=party, fill = cand_nm), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
+  scale_y_continuous(breaks = seq(0, 300000, 25000))+
+  xlab("Partidos")+
+  ylab("Quantidade de contribuições")+
+  ggtitle('Distribuição das contribuições por partido')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")
 
 ggplot(aes(x=party, y=contb_receipt_amt, fill = cand_nm), 
        data = USACampaign)+
   geom_bar(stat = 'sum')+
+  scale_y_continuous(breaks = seq(0, 2000000, 200000))+
+  xlab("Partidos")+
+  ylab("Valor total das contribuições")+
+  ggtitle('Valor total do financiamento por partido')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")
 
 ```
+
+
 
 ```{r Valor médio das contribuições, echo=FALSE}
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data = USACampaign)+
   geom_bar(stat = 'summary', fun.y = mean, fill = I('#AACC99'))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(aes(x=city_ordered, y=contb_receipt_amt), 
-       data = subset(USACampaign, city %in% top10_city))+
-  geom_bar(stat = 'summary', fun.y = sum, fill = I('#AACC99'))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+#ggplot(aes(x=city_ordered, y=contb_receipt_amt), 
+#       data = subset(USACampaign, city %in% top10_city))+
+#  geom_bar(stat = 'summary', fun.y = sum, fill = I('#AACC99'))+
+#  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
+Com base nas informações de longitude (`lon`) e latitude (`lat`) recolhidas na base de dados de zipcode, mapeei as contribuições realizadas na estado do Texas.
+
+```{r Distribuição espacial das distribuições no estado do Texas, echo=FALSE}
+
+#Distribuição espacial das contribuições
+ggplot(aes(x = lon, y = lat),
+       data = subset(USACampaign, !is.na(lon) &  !is.na(lat)))+
+  geom_point(alpha = 0.05)+
+  theme(legend.position="bottom")
+
+#Distribuição espacial das contribuições no estado do TX
+texas <- readShapeSpatial("tl_2017_48_cousub/tl_2017_48_cousub.shp")
+summary(texas)
+
+plot(texas)
+points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
 ```
 
 
@@ -512,4 +524,11 @@ ggplot(aes(x = lon, y = lat, color = cand_nm),
 
 # Reflexão
 
+# Referências
+
+Abaixo o link para referências usadas para este trabalho
+
+ - Detailed Files About Candidates, Parties and Other Committees - [FEC](http://classic.fec.gov/finance/disclosure/ftpdet.shtml)
+
+- Arquivo SHP das cidades do estado do Texas - [United States Census](https://www.census.gov/geo/maps-data/data/cbf/cbf_cousub.html)
 
