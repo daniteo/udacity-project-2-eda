@@ -73,9 +73,7 @@ def tratar_ocupacao(ocupacao):
         return "ACCOUNTANT"
     if ocupacao == "INSURANCE AGENT":
         return "INSURANCE"
-    if ocupacao == "INFORMATION REQUESTED PER BEST EFFORTS":
-        return "INFORMATION REQUESTED"
-    if ocupacao in ["N/A"]:
+    if ocupacao in ["N/A","INFORMATION REQUESTED PER BEST EFFORTS","INFORMATION REQUESTED"]:
         return ""
     if "NURSE" in ocupacao:
         return "NURSE"
