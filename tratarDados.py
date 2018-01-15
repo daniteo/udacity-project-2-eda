@@ -124,6 +124,9 @@ def tratar_dados_financiamento(dados, candidatos, comite):
         data['lon'] = lon
         data['lat'] = lat
 
+        del data['memo_cd']
+        del data['memo_text']
+
         dados_tratados.append(data)
 
     return dados_tratados
