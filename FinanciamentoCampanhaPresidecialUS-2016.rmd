@@ -1,3 +1,8 @@
+---
+output:
+  html_document: default
+  pdf_document: default
+---
 Contribuições da Campanha Presidencial America em 2016, estado do TX por Daniel Teobaldo
 ========================================================
 
@@ -23,7 +28,7 @@ library(dplyr)
 
 Para este projeto escolhi uma das bases de dados sugeridas pela Udacity: [Financiamento da Campanha Presidencial dos EUA de 2016](http://classic.fec.gov/disclosurep/pnational.do). 
 
-A idéia inicial era de se fazer a analise do estado dde NY, no entanto havia uma discrepancia muito grande nas contibuições uma vez que o comite "HILLARY VICTORY FUND" teve quase metade (45%) do valor de contribuições referentes a este estado em apenas 23 contribuições das 649.460 contribuições registradas, todas acima de U$ 100.000. Apenas este comite realizou contribuições acima deste valor. A maior contribuição abaixo deste valor de U$ 100.000 foi de U$ 11.816,25. A remoção dos *outliers* traria um dataset que não representaria o conjunto de dados do estado. 
+A idéia inicial era de se fazer a analise do estado de NY, no entanto havia uma discrepancia muito grande nas contibuições uma vez que o comite *"HILLARY VICTORY FUND"* foi responsável por 45% do valor financiado referente a este estado em apenas 23 das 649.460 contribuições registradas, sendo todas elas com valores acima de U$ 100.000.  Este foi o único contribuinte que realizou contribuições acima deste valor. A maior contribuição abaixo deste valor de U$ 100.000 foi de U$ 11.816,25. Poderia ser feita uma remoção dos outliers, porém esta ação traria um dataset que não representa o conjunto de dados do estado. 
 
 ```{r Carga dados NY, echo = FALSE, warning = FALSE}
 # Carga dos dados
@@ -43,7 +48,8 @@ USACampaign <- left_join(USACampaign, cmte_data, by = c("cmte_id"))
 rm(cmte_data)
 ```
 
-```{r Outliers NY, warning = FALSE}
+
+```{r Analise NY, warning = FALSE}
 #Verifica a distribuição dos valores de controbuições do dataset
 summary(USACampaign$contb_receipt_amt)
 
@@ -57,42 +63,65 @@ max(USACampaign[USACampaign$contb_receipt_amt < 100000,]$contb_receipt_amt)
 
 sum(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",]$contb_receipt_amt)/sum(USACampaign$contb_receipt_amt)*100
 
-count(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",])
+dim(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",])
 
 USACampaign$hillary_comitte <- ifelse(USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED", "Y", "N")
+```
+
+Quando comparamos as contribuições do contribuinte *HILLARY VICTORY FUND - UNITEMIZED* e os demais contribuintes, vemos que o valor total das contribuições são próximos, porém as quantidade de contribuições da comite da Hillary são significamente menores.
+
+```{r Graficos NY, echo = FALSE, warning=FALSE}
 
 #Contribuições HILLARY VICTORY vs OTHERS - Distribuição dos valores e total de contribuição
-g1 <- ggplot(aes(x=hillary_comitte), 
+ggplot(aes(x=hillary_comitte), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_y_continuous(breaks=seq(0,700000,50000))+
+  xlab("HILLARY VICTORY FUN")+
+  ylab("Qtde de contribuições")+
   ggtitle('Comparação das contribuições entre comite da Hillary e outros')
 
 
-g2 <- ggplot(aes(x=hillary_comitte, y=contb_receipt_amt), 
+#Distribuição de valores entre as faixas vs total dos valores por faixa
+ggplot(aes(x=hillary_comitte, y=contb_receipt_amt/1000), 
        data = USACampaign)+
   geom_bar(stat = 'summary', fun.y = 'sum')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Comparação da soma das contribuições entre comite da Hillary e outros')
+  xlab("HILLARY VICTORY FUN")+
+  ylab("Valor total das contribuições")+
+  ggtitle('Comparação da total das contribuições (em milhares)')
 
-#Distribuição de valores entre as faixas vs total dos valores por faixa
-grid.arrange(g1, g2, ncol = 2)
 
-g3 <- ggplot(aes(x=contb_range), 
+```
+
+Abaixo uma comparação entre a quantidade de contribuições realizadas por faixa de valor versus o total arrecadado.
+
+```{r echo = FALSE}
+ggplot(aes(x=contb_range), 
        data = subset(USACampaign, !is.na(contb_range)))+
   geom_bar(stat = 'count')+
+  scale_y_continuous(breaks=seq(0,600000,50000))+
+  scale_x_discrete(labels=c("Até 100","100-500","500-2000","2000-50000","Acima de 50000"))+
+  xlab("Qtde de contribuições")+
+  ylab("Candidatos")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Distribuição das contribuições em NY')
 
 
-g4 <- ggplot(aes(x=contb_range, y=contb_receipt_amt), 
+ggplot(aes(x=contb_range, y=contb_receipt_amt/1000), 
        data = subset(USACampaign, !is.na(contb_range)))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
+  scale_y_continuous(breaks=seq(0,90000,10000))+
+  scale_x_discrete(labels=c("Até 100","100-500","500-2000","2000-50000","Acima de 50000"))+
+  xlab("Qtde de contribuições")+
+  ylab("Candidatos")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições em NY')
+  ggtitle('Distribuição das contribuições em NY (em milhares)')
 
-grid.arrange(g3, g4, ncol = 2)
+```
 
+É possível notar também o impacto das contribuições de valores elevados quando comparamos os quartils dos valores com e sem estas contribuições, para cada candidato.
+
+```{r echo=FALSE}
 # plotbox com e sem contribuições com valores superiores a R$ 100.000,00
 ggplot(aes(y=contb_receipt_amt, x=cand_nm), 
        data = USACampaign)+
@@ -104,13 +133,11 @@ ggplot(aes(y=contb_receipt_amt, x=cand_nm),
   geom_boxplot()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-rm(g1, g2, g3, g4)
-
 ```
 
-Esta discrepancia traria um prejuizo na avaliação das contribuições entre os candidatos e restringiria as analises dos dados. Desta forma optei por fazer a analise das contribuições feitas pelos eleitores do estado do TX, que traz uma distribuição mais homogenea nas contribuições.
+Esta discrepancia prejudicaria a avaliação das contribuições entre os candidatos e restringiria as analises dos dados. Desta forma optei por fazer a analise das contribuições feitas pelos eleitores do estado do TX, que traz uma distribuição mais homogenea nas contribuições.
 
-========================================================
+=============================================================
 
 ## Analise do dataset do estado do Texas
 
@@ -160,33 +187,63 @@ Este dataset do estado do Texas contem 548.396 observações com 28 variaveis. O
 
 # Seção de Gráficos Univariados
 
-Nesta primeira analise tentei identificar o período em que as contribuições ocorreram com mais frequencia. 
+Uma analise importante é como as contribuições estão distribuidas por candidato. Já pensando em uma analise por partido, neste gráfico já decidi classificar os candidatos. Para a difinição do partido, consideramos a classificação registrada na base de dados de candidatos obtida no site da **FEC**. 
 
-```{r Distribuição das doações ao longo do periodo, echo=FALSE}
-summary(USACampaign$contb_receipt_date)
+```{r Distribuição por candidato, echo = FALSE}
 
-#Freqpoly das contribuições em todo periodo considerando um binwidth de 7 (1 semana)
-ggplot(aes(x = contb_receipt_date), data = USACampaign)+
-  geom_freqpoly(binwidth=7)+
-  scale_x_date(date_breaks = "3 months", 
-               date_minor_breaks = "1 months", 
-               date_labels = "%b/%Y",
-               limits = as.Date(c("2013-10-01","2016-12-31")))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições no período')
+USACampaign.by_candidate <- USACampaign %>%
+                      group_by(cand_nm) %>%
+                      summarise(count = n()) %>%
+                      arrange(desc(count))
 
-#Freqpoly das contribuições no ano de 2016 considerando um binwidth de 7 (1 semana)
-ggplot(aes(x = contb_receipt_date), data = USACampaign)+
-  geom_freqpoly(binwidth=7)+
-  scale_x_date(date_breaks = "1 months", 
-               date_labels = "%b/%Y",
-               limits = as.Date(c("2016-01-01","2016-12-31")))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições no período em 2016')
+cand_ordered <- USACampaign.by_candidate$cand_nm
+
+USACampaign$cand_nm <- factor(USACampaign$cand_nm, cand_ordered)
+
+top5_cand <- head(USACampaign.by_candidate$cand_nm, 5)
+
+ggplot(aes(x=cand_nm, fill = party), 
+       data = USACampaign)+
+  geom_bar(stat = 'count')+
+  xlab("Candidatos")+
+  ylab("Qtde de contribuições")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(aes(x=cand_nm, fill = party), 
+       data = subset(USACampaign,
+                     cand_nm %in% top5_cand))+
+  geom_bar(stat = 'count')+
+  xlab("Candidatos")+
+  ylab("Qtde de contribuições")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
 
 ```
 
-```{r Quantidade de doações periodo, echo=FALSE}
+Como esperado, nota-se que a maior parte das contribuições se destinam aos candidatos democratas (DEM) e republicanos (REP), desta forma vamos considerar apenas estes 2 partidos nas analises.
+
+```{r Distribuição das contribuições por partido, echo = FALSE}
+
+USACampaign.rep_and_dem <- subset(USACampaign, party == "DEM" | party == "REP") 
+
+ggplot(aes(x=party), 
+       data = USACampaign.rep_and_dem)+
+  geom_bar(stat = 'count')
+
+boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem, outline=FALSE)
+
+ggplot(aes(x=party, y=contb_receipt_amt), 
+       data = subset(USACampaign.rep_and_dem, 
+                     contb_receipt_amt < quantile(USACampaign.rep_and_dem$contb_receipt_amt, 0.9)))+
+  geom_boxplot()
+
+```
+
+Nesta analise procurei fazer uma avaliação identificardas contribuições ocorreram ao longo do período. Primeiro considerei todo o período do dataset e então fiz uma analise focada em 2016, ano da eleição. 
+
+```{r Distribuição das doações ao longo do periodo, echo=FALSE, warning=FALSE}
+summary(USACampaign$contb_receipt_date)
+
 ggplot(aes(x = contb_receipt_dt_year), data = USACampaign)+
   geom_histogram(stat = 'count')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
@@ -197,10 +254,30 @@ ggplot(aes(x = contb_receipt_dt_month), data = USACampaign)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   facet_wrap( ~contb_receipt_dt_year, ncol = 4)+
   ggtitle('Distribuição das contribuições por mes')
-```
-Em sequencia realizei uma análise da distribuição dos valores de contribuições.
 
-```{r Distribuição das contribuições por valor, echo = FALSE}
+#Freqpoly das contribuições em todo periodo considerando um binwidth de 7 (1 semana)
+g <- ggplot(aes(x = contb_receipt_date), data = USACampaign)+
+  geom_freqpoly(binwidth=7)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+g+
+  scale_x_date(date_breaks = "3 months", 
+               date_minor_breaks = "1 months", 
+               date_labels = "%b/%Y",
+               limits = as.Date(c("2013-10-01","2016-12-31")))+
+  ggtitle('Distribuição das contribuições no período')
+
+#Freqpoly das contribuições no ano de 2016 considerando um binwidth de 7 (1 semana)
+g+
+  scale_x_date(date_breaks = "1 months", 
+               date_labels = "%b/%Y",
+               limits = as.Date(c("2016-01-01","2016-12-31")))+
+  ggtitle('Distribuição das contribuições no período em 2016')
+```
+
+Em uma análise da distribuição dos valores de contribuições já podemos perceber como as contribuições de menores valores são a maioria em quantidade, como já se era de esperar.
+
+```{r Distribuição das contribuições por valor, echo = FALSE, warning=FALSE}
 
 ggplot(aes(x=contb_receipt_amt), 
        data = USACampaign)+
@@ -209,113 +286,103 @@ ggplot(aes(x=contb_receipt_amt),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Quando gerei o primeiro gráfico com a distribuição dos valores, percebi uma contagem muito grande para as ocorrencias de menor valor (mais de 350.00). Reduzi então o binwidth em 10x para que as barras contivessem menos valores na mesma faixa uma vez que para valores baixos temos uma gama de valores muito grande. Depois reduzi o limite do eixo x com o objetivo de ter uma maior visibilidade das distribuições.
+Para uma analise de um espectro maior de valores, reduzi o binwidth em 10x. Na sequência apliqei uma escala logaritima para exibir melhor o valores com menos contribuuções e reduzi o limite do eixo x com o objetivo de focar nos valores de contribuições mais frequentes, chegando no limite de um quartil de 95%.
 
-```{r Distribuição das contribuições por valor 2, echo = FALSE}
-ggplot(aes(x=contb_receipt_amt), 
+```{r Distribuição das contribuições por valor 2, echo = FALSE, warning=FALSE}
+g <- ggplot(aes(x=contb_receipt_amt), 
        data = USACampaign)+
   geom_histogram(binwidth = 10)+
-  scale_x_continuous(breaks = seq(0, 15000, 2500))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Exibe o primeiro grafico
+g +
+  scale_x_continuous(breaks = seq(0, 15000, 2500))
 
 summary(USACampaign$contb_receipt_amt)
 
+#Aplica a escola logaritimica no grafico anterior
+g +
+  scale_x_continuous(breaks = seq(0, 15000, 2500))+
+  scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000))
+  
+#Removendo os outliers
 quantile(USACampaign$contb_receipt_amt, 0.95)
 
-ggplot(aes(x=contb_receipt_amt), 
-       data = subset(USACampaign, contb_receipt_amt < 3000))+
-  geom_histogram(binwidth = 10)+
-  scale_x_continuous(breaks = seq(0, 3000, 500))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#Removendo os outliers
 ggplot(aes(x = contb_receipt_amt), 
        data = USACampaign)+
-  geom_histogram(binwidth = 10)+
-  scale_x_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.95)), breaks = seq(0, 3000, 200))+
+  geom_histogram(binwidth = 1)+
+  scale_x_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.95)), 
+                     breaks = seq(0, quantile(USACampaign$contb_receipt_amt, 0.95), 50))+
+  scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
 
-ggplot(aes(x = contb_receipt_amt), 
-       data = USACampaign)+
-  geom_histogram(bins=100)+
-  scale_x_log10()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+Decidi classificar os valores de contribuição considerando as seguintes faixas de valores:
+- Até 100,00
+- 100,01 a 500,00
+- 500,01 a 3.000,00
+- 3.000,01 a 50.000,00
+- Acima de 50.000,00
 
+```{r echo=FALSE, warning=FALSE}
 # Cria faixa para os valores de contribuição
-USACampaign$contb_receipt_amt_range <- cut(USACampaign$contb_receipt_amt, c(0,100,500,3000,50000,max(USACampaign$contb_receipt_amt)))
+USACampaign$contb_receipt_amt_range <- cut(USACampaign$contb_receipt_amt, c(0,100,500,2000,max(USACampaign$contb_receipt_amt)))
 
 ggplot(aes(x=contb_receipt_amt_range), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
+  scale_y_continuous(breaks=seq(0,600000,50000))+
+  scale_x_discrete(labels=c("Até 100","100-500","500-2000","Acima de 2000"))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
 
-
-```{r Distribuição das contribuições por partido, echo = FALSE}
-
-ggplot(aes(x=party), 
-       data = USACampaign)+
-  geom_bar(stat = 'count')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-ggplot(aes(x=party, y=contb_receipt_amt), 
-       data = subset(USACampaign, contb_receipt_amt < quantile(USACampaign$contb_receipt_amt, 0.95)))+
-  geom_boxplot()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-```
-
-
-```{r Distribuição por candidato, echo = FALSE}
-
-USACampaign.by_candidate <- USACampaign %>%
-                      group_by(cand_nm) %>%
-                      summarise(count = n()) %>%
-                      arrange(desc(count))
-
-comite_ordered <- USACampaign.by_candidate$cand_nm
-
-USACampaign$cand_nm <- factor(USACampaign$cand_nm, comite_ordered)
-
-ggplot(aes(x=cand_nm), 
-       data = USACampaign)+
-  geom_bar(stat = 'count')+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
-
-```{r Distribuição das contribuições na 25 maiores cidades}
+```{r Distribuição das contribuições na 30 maiores cidades, echo = FALSE, warning = FALSE}
 
 USACampaign.by_city <- USACampaign %>%
                       group_by(city) %>%
                       summarise(count = n()) %>%
                       arrange(desc(count))
 
-head(USACampaign.by_city, 25)
+head(USACampaign.by_city, 30)
 
-top10_city <- head(USACampaign.by_city, 25)$city
+top30_city <- head(USACampaign.by_city, 30)$city
 
 # Ordena as cidades com base na quantidade de contribuições
 USACampaign$city_ordered <- factor(USACampaign$city, USACampaign.by_city$city)
 
 # Distribuição das contribuições entre as cidades com mais contribuições
 ggplot(aes(x=city_ordered), 
-       data = subset(USACampaign, city %in% top10_city))+
+       data = subset(USACampaign, city %in% top30_city))+
   geom_bar(stat = 'count')+
+  scale_y_continuous(breaks=seq(0, 70000, 10000), minor_breaks = seq(0, 75000, 2500))+
+  xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
 ```
 
 
 ```{r Distribuicao por ocupação, echo=FALSE}
-top3_occupation = head(unique(USACampaign$contbr_occupation), 3)
 
-ggplot(aes(x = cand_nm), data = subset(USACampaign, contbr_occupation %in% top3_occupation))+
+USACampaign.by_occupation <- USACampaign %>%
+                      group_by(contbr_occupation) %>%
+                      summarise(count = n()) %>%
+                      arrange(desc(count))
+
+head(USACampaign.by_occupation, 10)
+
+top10_occupation <- head(USACampaign.by_occupation, 10)$contbr_occupation
+
+# Ordena as cidades com base na quantidade de contribuições
+USACampaign$occup_ordered <- factor(USACampaign$contbr_occupation, USACampaign.by_occupation$contbr_occupation)
+
+# Distribuição das contribuições entre as cidades com mais contribuições
+ggplot(aes(x=occup_ordered), 
+       data = subset(USACampaign, contbr_occupation %in% top10_occupation))+
   geom_bar(stat = 'count')+
+  xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  facet_wrap( ~contbr_occupation, ncol = 1 )+
-  ggtitle('Distribuição das contribuições por candidato entre as 3 principais ocupações do contribuintes')
+  ggtitle('Distribuição das contribuições por candidato entre as 10 principais ocupações do contribuintes')
 ```
 
 # Análise Univariada
@@ -343,11 +410,11 @@ Além destas existem variáveis importantes como o partido do candidato.
 ### Você criou novas variáveis a partir dos atributos existentes no conjunto de dados?
 
 Sim. Foram criados as seguintes variaveis: 
- - A partir da data, criei colunas com os componentes da data de contribuição (dia, mês e ano)
- - Foram incorporados dados do dataset de CEP (zipcode): cidade, longitude e latitude 
- - Foi adicionada uma coluna com faixas dos valores doados.
- - A partir da base de dados dos candidatos (obtido na FEC), foi incorporado o partido do candidato
- - A partir da base de dados dos comites (obtido na FEC), foi incorporado o nome do comite
+- A partir da data, criei colunas com os componentes da data de contribuição (dia, mês e ano)
+- Foram incorporados dados do dataset de CEP (zipcode): cidade, longitude e latitude 
+- Foi adicionada uma coluna com faixas dos valores doados.
+- A partir da base de dados dos candidatos (obtido na FEC), foi incorporado o partido do candidato
+- A partir da base de dados dos comites (obtido na FEC), foi incorporado o nome do comite
 
 ### Dos atributos investigados, distribuições incomuns foram encontradas? Você aplicou operações nos dados para limpá-los, ajustá-los ou mudar a forma dos dados? Se sim, por quê?
 
@@ -366,7 +433,7 @@ Aqui fiz uma analise das distriuição dos valores ao longo do tempo. No primeir
 ```{r Valores de contrbuição ao longo do tempo, echo = FALSE}
 ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
-  geom_point(alpha = 1/20)+
+  geom_point(alpha = 1/100)+
   scale_x_date(date_breaks = "2 months", 
                date_minor_breaks = "1 months", 
                date_labels = "%b/%Y")+
@@ -375,9 +442,9 @@ ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt),
   ggtitle('Distribuição das contribuições no período')
 
 
-ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt, color = cand_nm), 
+ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
-  geom_point(alpha = 1/50)+
+  geom_point(alpha = 1/100)+
   scale_x_date(date_breaks = "1 months", 
                date_labels = "%b/%Y",
                limits = as.Date(c("2016-01-01","2016-12-31")))+
@@ -386,17 +453,18 @@ ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt, color = cand_nm),
   ggtitle('Distribuição das contribuições no período')
 ```
 
-Nesta analise podemos perceber a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares. Talvez houvesse uma opção explicita neste valor, ou fosse um teto de contribuição. 
+Nesta analise podemos perceber a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares, que o limite máximo permitido para pessoas físicas.
 
 Estas mesmas faixas podem ser percebidas quando analisamos a os valores de contribuição por candidato, como visto abaixo.
+
 ```{r Valor de contibuições para cada candidato, echo=FALSE}
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   geom_point()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
-  geom_point()+
-  ylim(0, quantile(USACampaign$contb_receipt_amt, 0.99))+
+  geom_point(alpha = 1/50, position = 'jitter')+
+  scale_y_continuous(breaks = seq(0, 20000, 1000))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
@@ -406,10 +474,11 @@ ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
 ```{r Distribuição das contribuições por partido e candidato, echo = FALSE}
 
 ggplot(aes(x=party, fill = cand_nm), 
-       data = USACampaign)+
+       data = USACampaign.rep_and_dem)+
   geom_bar(stat = 'count')+
   scale_y_continuous(breaks = seq(0, 300000, 25000))+
   xlab("Partidos")+
@@ -418,7 +487,7 @@ ggplot(aes(x=party, fill = cand_nm),
   theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")
 
 ggplot(aes(x=party, y=contb_receipt_amt, fill = cand_nm), 
-       data = USACampaign)+
+       data = USACampaign.rep_and_dem)+
   geom_bar(stat = 'sum')+
   scale_y_continuous(breaks = seq(0, 2000000, 200000))+
   xlab("Partidos")+
@@ -439,6 +508,24 @@ ggplot(aes(x=cand_nm, y=contb_receipt_amt), data = USACampaign)+
 #       data = subset(USACampaign, city %in% top10_city))+
 #  geom_bar(stat = 'summary', fun.y = sum, fill = I('#AACC99'))+
 #  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r Distribuição das contribuições na 30 maiores cidades por partido, echo = FALSE, warning = FALSE}
+
+# Distribuição das contribuições entre as cidades com mais contribuições por partido
+ggplot(aes(x=city_ordered, fill=party), 
+       data = subset(USACampaign, city %in% top30_city))+
+  geom_bar(stat = 'count')+
+  scale_y_continuous(breaks=seq(0, 70000, 10000), minor_breaks = seq(0, 75000, 2500))+
+  xlab("Cidades do estado do TX")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+ggplot(aes(x=city_ordered, y=contb_receipt_amt, fill = party), 
+       data = subset(USACampaign, city %in% top30_city))+
+  geom_bar(stat = 'summary', fun.y = 'sum')+
+  scale_y_continuous(breaks=seq(0, 70000, 10000), minor_breaks = seq(0, 75000, 2500))+
+  xlab("Cidades do estado do TX")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
 Com base nas informações de longitude (`lon`) e latitude (`lat`) recolhidas na base de dados de zipcode, mapeei as contribuições realizadas na estado do Texas.
@@ -523,6 +610,12 @@ ggplot(aes(x = lon, y = lat, color = cand_nm),
 ------
 
 # Reflexão
+
+No início da análise dos dados tinha em mente fazer utilização apenas dos dados disponíveis no dataset. A partir dele comecei a fazer a análise das distribuição de valores do estado de NY. Neste ponto me deparei com as questões citadas no início do documento, que me fizeram mudar minha análise para os dados de outro esttado, o Texas.
+
+Durante as primeiras análises percebi que muitos dados necessitavam de trartamento e então resolvi preparar um script em Python para realizar alguns ajustes. Outra observação feita com inicio do trabalho, foi que a necessidade de mais dados para análise e exclusão de algumas informações desnecessárias no dataset.
+
+DIFICULDADE COM MAPA
 
 # Referências
 
