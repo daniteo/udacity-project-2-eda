@@ -137,9 +137,11 @@ ggplot(aes(y=contb_receipt_amt, x=cand_nm),
 
 Esta discrepancia prejudicaria a avaliação das contribuições entre os candidatos e restringiria as analises dos dados. Desta forma optei por fazer a analise das contribuições feitas pelos eleitores do estado do TX, que traz uma distribuição mais homogenea nas contribuições.
 
-=============================================================
+***
 
 ## Analise do dataset do estado do Texas
+
+Inicamos aqui a análise do dataset do estado do Texas (TX). Algumas verificações simples nesta base de dados nos aponta necessidade de tratamento das informações. Este tratamento será feito em um script a parte, em python [`tratarDados.py`](tratarDados.py). Maiores detalhes sobre este tratamentos pode ser visualizado no arquivo [`Tratamento de dados.md`](Tratamento de dados.md). 
 
 ```{r Carga dos dados de contribuição do TX sem tratamento, echo  = FALSE}
 USACampaign <- read.csv('P00000001-TX.csv', header = T, as.is = T)
@@ -154,8 +156,6 @@ dim(USACampaign[USACampaign$contb_receipt_amt == 0,])
 table(USACampaign[substr(USACampaign$contbr_city, 1, 4) == "DALL",]$contbr_city)
 
 ```
-
-Algumas verificações simples nesta base de dados nos aponta necessidade de tratamento das informações. Este tratamento será feito em um script a parte, em python (`tratarDados.py`). Maiores detalhes sobre este tratamentos pode ser visualizado no arquivo `Tratamento de dados.md`. 
 
 ```{r Carregar dados e resumo, echo=FALSE}
 # Carregamento dos dados
@@ -183,11 +183,11 @@ summary(USACampaign)
 
 ```
 
-Este dataset do estado do Texas contem 548.396 observações com 28 variaveis. O dataset original (sem tratamento) contém 18 variáveis.
+O dataset tratado contem 548.396 observações com 28 variaveis. O dataset original (sem tratamento) contém 18 variáveis.
 
 # Seção de Gráficos Univariados
 
-Uma analise importante é como as contribuições estão distribuidas por candidato. Já pensando em uma analise por partido, neste gráfico já decidi classificar os candidatos. Para a difinição do partido, consideramos a classificação registrada na base de dados de candidatos obtida no site da **FEC**. 
+É importante realizarmos uma analise sobre a distribuição das contribuições entre os candidatos. Nesta analise já classifiquei os candidatos por partido para identificação, com o intuíto de entender melhor como é a divisão entre as legendas. Para a difinição do partido, consideramos a classificação registrada na base de dados de candidatos obtida no site da [**FEC**](https://cg-519a459a-0ea3-42c2-b7bc-fa1143481f74.s3-us-gov-west-1.amazonaws.com/bulk-downloads/2016/cn16.zip). 
 
 Nesta análise percebemos que a grande maioria das contribuições se concentram nos 4 primeiros candidatos, mas é importante notar que quando ordenamos por valor total arrecadado, existe um inversão nas posições. Devido a essa inversão farei uma análise focada nos 7 candidatos com maior volume arrecada, no lugar de 5 candidatos que era a idéia inicial.
 
@@ -223,11 +223,11 @@ hist_cand_ordenado <- function(ordererd_field) {
   
 }
 
-#Histograma ordenado por valor total
-hist_cand_ordenado(USACampaign.by_candidate$valor_total)
-
 #Histograma ordenado por qtde
 hist_cand_ordenado(USACampaign.by_candidate$qtde)
+
+#Histograma ordenado por valor total
+hist_cand_ordenado(USACampaign.by_candidate$valor_total)
 
 top7_cand <- head(USACampaign.by_candidate$cand_nm, 7)
 
@@ -235,7 +235,7 @@ hist_cand(subset(USACampaign, cand_nm %in% top7_cand))
 
 ```
 
-Como esperado, nota-se que a maior parte das contribuições se destinam aos candidatos democratas (DEM) e republicanos (REP), desta forma vamos considerar apenas estes 2 partidos nas analises.
+Como esperado, nota-se que a maior parte das contribuições se destinam aos candidatos democratas (DEM) e republicanos (REP), desta forma vamos considerar apenas estes 2 partidos nas analises. É importante percebermos pelo **Boxplot** que a as contribuições para os candidatos republicanos, no geral, possuem um valor unitário maior que as doações feitas aos democratas. Isto deve trazer um impacto no valor total arrecadado por partido, apesar de ambos possuirem qauntidades de contribuições semelhantes. Esta é uma analise a ser feita na seção de Gráficos Bivariados.  
 
 ```{r Distribuição das contribuições por partido, echo = FALSE}
 
@@ -245,16 +245,16 @@ ggplot(aes(x=party),
        data = USACampaign.rep_and_dem)+
   geom_bar(stat = 'count')
 
+#Boxplot com outline
+boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem)
+
+#Boxplot sem outline
 boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem, outline=FALSE)
 
-ggplot(aes(x=party, y=contb_receipt_amt), 
-       data = subset(USACampaign.rep_and_dem, 
-                     contb_receipt_amt < quantile(USACampaign.rep_and_dem$contb_receipt_amt, 0.9)))+
-  geom_boxplot()
-
 ```
+Na analise a seguir procurei fazer uma avaliação identificando como se foram realizadas as contribuições ao longo do período. Iniciei a analise verificando a distribuição das doações por ano e, em seguida, realizei a analise por mês.
 
-Nesta analise procurei fazer uma avaliação identificardas contribuições ocorreram ao longo do período. Primeiro considerei todo o período do dataset e então fiz uma analise focada em 2016, ano da eleição. 
+Por fim, foquei no periodo de 2016, que é onde ocorreram a maior quantidade de doações.
 
 ```{r Distribuição das doações ao longo do periodo, echo=FALSE, warning=FALSE}
 summary(USACampaign$contb_receipt_date)
@@ -290,7 +290,7 @@ g+
   ggtitle('Distribuição das contribuições no período em 2016')
 ```
 
-Em uma análise da distribuição dos valores de contribuições já podemos perceber como as contribuições de menores valores são a maioria em quantidade, como já se era de esperar.
+Na sequencia analisei a distribuição das doações por quantidade. Nesta analiíse foi possível perceber como as contribuições de menores valores são as mais frequentes. Esse já era um comportamento esperado um vez que muitos eleitores não possuem muitos recursos para doar mas procuram ajudar com uma quantidade que esta ao seu alcance.
 
 ```{r Distribuição das contribuições por valor, echo = FALSE, warning=FALSE}
 
@@ -645,9 +645,8 @@ DIFICULDADE COM MAPA
 
 Abaixo o link para referências usadas para este trabalho
 
-- Detailed Files About Candidates, Parties and Other Committees - [FEC](http://classic.fec.gov/finance/disclosure/ftpdet.shtml)
-
+- Arquivo detalhado de candidatos - [FEC](https://cg-519a459a-0ea3-42c2-b7bc-fa1143481f74.s3-us-gov-west-1.amazonaws.com/bulk-downloads/2016/cn16.zip)
+- Arquivo detalhado de comites - [FEC](https://cg-519a459a-0ea3-42c2-b7bc-fa1143481f74.s3-us-gov-west-1.amazonaws.com/bulk-downloads/2016/cm16.zip)
 - Arquivo SHP das cidades do estado do Texas - [United States Census](https://www.census.gov/geo/maps-data/data/cbf/cbf_cousub.html)
-
 - Limites de contribuições por candidato - [FEC](https://transition.fec.gov/info/contriblimitschart1516.pdf)
 
