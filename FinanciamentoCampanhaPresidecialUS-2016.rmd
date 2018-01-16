@@ -189,34 +189,49 @@ Este dataset do estado do Texas contem 548.396 observações com 28 variaveis. O
 
 Uma analise importante é como as contribuições estão distribuidas por candidato. Já pensando em uma analise por partido, neste gráfico já decidi classificar os candidatos. Para a difinição do partido, consideramos a classificação registrada na base de dados de candidatos obtida no site da **FEC**. 
 
+Nesta análise percebemos que a grande maioria das contribuições se concentram nos 4 primeiros candidatos, mas é importante notar que quando ordenamos por valor total arrecadado, existe um inversão nas posições. Devido a essa inversão farei uma análise focada nos 7 candidatos com maior volume arrecada, no lugar de 5 candidatos que era a idéia inicial.
+
+Uma analise mais detalhada desse aspecto será realizada na seção de gráficos bivariados.
+
 ```{r Distribuição por candidato, echo = FALSE}
 
-USACampaign.by_candidate <- USACampaign %>%
-                      group_by(cand_nm) %>%
-                      summarise(count = n()) %>%
-                      arrange(desc(count))
+agrupado_por_candidato <- function() {
+  
+  df <- USACampaign %>%
+    group_by(cand_nm) %>%
+    summarise(qtde = n(),
+              valor_total = sum(contb_receipt_amt),
+              valor_medio = mean(contb_receipt_amt))
+}
 
-cand_ordered <- USACampaign.by_candidate$cand_nm
+USACampaign.by_candidate <- agrupado_por_candidato()
 
-USACampaign$cand_nm <- factor(USACampaign$cand_nm, cand_ordered)
-
-top5_cand <- head(USACampaign.by_candidate$cand_nm, 5)
-
-ggplot(aes(x=cand_nm, fill = party), 
-       data = USACampaign)+
+hist_cand <- function(df) {
+    ggplot(aes(x=cand_nm, fill = party), 
+       data = df)+
   geom_bar(stat = 'count')+
   xlab("Candidatos")+
   ylab("Qtde de contribuições")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
 
-ggplot(aes(x=cand_nm, fill = party), 
-       data = subset(USACampaign,
-                     cand_nm %in% top5_cand))+
-  geom_bar(stat = 'count')+
-  xlab("Candidatos")+
-  ylab("Qtde de contribuições")+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+hist_cand_ordenado <- function(ordererd_field) {
 
+  USACampaign.by_candidate <- arrange(USACampaign.by_candidate, desc(ordererd_field))
+  USACampaign$cand_nm <- factor(USACampaign$cand_nm, USACampaign.by_candidate$cand_nm)
+  hist_cand(USACampaign)
+  
+}
+
+#Histograma ordenado por valor total
+hist_cand_ordenado(USACampaign.by_candidate$valor_total)
+
+#Histograma ordenado por qtde
+hist_cand_ordenado(USACampaign.by_candidate$qtde)
+
+top7_cand <- head(USACampaign.by_candidate$cand_nm, 7)
+
+hist_cand(subset(USACampaign, cand_nm %in% top7_cand))
 
 ```
 
@@ -320,9 +335,8 @@ ggplot(aes(x = contb_receipt_amt),
 Decidi classificar os valores de contribuição considerando as seguintes faixas de valores:
 - Até 100,00
 - 100,01 a 500,00
-- 500,01 a 3.000,00
-- 3.000,01 a 50.000,00
-- Acima de 50.000,00
+- 500,01 a 2.000,00
+- Acima de 2.000,00
 
 ```{r echo=FALSE, warning=FALSE}
 # Cria faixa para os valores de contribuição
@@ -431,29 +445,29 @@ Todos os tratamentos foram realizados num script python a parte (`tratarDados.py
 Aqui fiz uma analise das distriuição dos valores ao longo do tempo. No primeiro gráfico foi feita uma analise mais ampla por todo o período compreendido no dataset. No segundo reduzi o faixa de valores para o ano de 2016 e foi considerada as contribuições realizadas dentro de 99% da amostragem.
 
 ```{r Valores de contrbuição ao longo do tempo, echo = FALSE}
-ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
+
+g <- ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
-  geom_point(alpha = 1/100)+
+  geom_point(alpha = 1/100, position = 'jitter', color = 'orange')+
+  geom_smooth()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  ggtitle('Distribuição das contribuições no período')
+
+g+
   scale_x_date(date_breaks = "2 months", 
                date_minor_breaks = "1 months", 
                date_labels = "%b/%Y")+
-  scale_y_continuous(breaks = seq(0, 17500, 1000))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições no período')
+  scale_y_continuous(breaks = seq(0, 17500, 1000))
 
-
-ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
-       data = USACampaign)+
-  geom_point(alpha = 1/100)+
+g+
   scale_x_date(date_breaks = "1 months", 
                date_labels = "%b/%Y",
                limits = as.Date(c("2016-01-01","2016-12-31")))+
-  scale_y_continuous(breaks = seq(0, 6000, 500), limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições no período')
+  scale_y_continuous(breaks = seq(0, 6000, 500), limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))
+
 ```
 
-Nesta analise podemos perceber a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares, que o limite máximo permitido para pessoas físicas.
+Nesta analise podemos perceber a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares, que era o limite máximo permitido para pessoas físicas [Limites de contribuições - FEC](https://transition.fec.gov/info/contriblimitschart1516.pdf). Considerando eleições primárias e geral, é possível uma doação de $5.400,00 (2.700 para cada).
 
 Estas mesmas faixas podem ser percebidas quando analisamos a os valores de contribuição por candidato, como visto abaixo.
 
@@ -462,18 +476,39 @@ ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   geom_point()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
+g <- ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
   geom_point(alpha = 1/50, position = 'jitter')+
-  scale_y_continuous(breaks = seq(0, 20000, 1000))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
-  geom_point(alpha = 1/50, position = 'jitter')+
-  scale_y_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)),
-                     breaks = seq(0, 3000, 250))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+g+scale_y_continuous(breaks = seq(0, 20000, 1000))
+
+g+scale_y_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)),
+                     breaks = seq(0, 3000, 250))
 
 ```
+
+Nesta sequencia de gráficos vemos as relações entre candidatos e valores de contribuição. Ao contrário do que normalmente seria esperado, o candidato com mais contribuições não é o mesmo com maior valor arrecadado. O candidato **Jeb Bush**, apesar de possuir menos de 5% das contribuições de **Bernard Sanders**, conseguiu arrecadar um pouco que o este. No caso especial de Jeb Bush, isto pode ter relação com o fato do Texas ser o seu estado Natal, além da sua  relação com os outros 2 ex-presidentes Bush (pai e irmão).
+
+```{r Valor médio das contribuições, echo=FALSE}
+
+plot_candidato <- function(df, campo, titulo = '') {
+  ggplot(aes(x=cand_nm, y=campo), data = df)+
+    geom_bar(stat = 'identity', fill = I('#99AAFF'))+
+    ggtitle(titulo)+
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+df <- subset(agrupado_por_candidato(), cand_nm %in% top7_cand)
+
+df
+
+plot_candidato(df, df$qtde, 'Qtde de contribuições por candidato')
+plot_candidato(df, df$valor_total, 'Valor total por candidato')
+plot_candidato(df, df$valor_medio, 'Valor médio por candidato')
+
+```
+
+Um comportamento semelhante pode ser observado quando analisamos os 2 principais partidos (Democratas e Republicanos). Embora os democratas tenham uma quantidade de contribuições maior do que a dos republicanos (feitas principalmente em nome de Hillary Cinton), o valor arreacadado do segundo é quase o dobro do primeiro.
 
 ```{r Distribuição das contribuições por partido e candidato, echo = FALSE}
 
@@ -497,18 +532,7 @@ ggplot(aes(x=party, y=contb_receipt_amt, fill = cand_nm),
 
 ```
 
-
-
-```{r Valor médio das contribuições, echo=FALSE}
-ggplot(aes(x=cand_nm, y=contb_receipt_amt), data = USACampaign)+
-  geom_bar(stat = 'summary', fun.y = mean, fill = I('#AACC99'))+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-#ggplot(aes(x=city_ordered, y=contb_receipt_amt), 
-#       data = subset(USACampaign, city %in% top10_city))+
-#  geom_bar(stat = 'summary', fun.y = sum, fill = I('#AACC99'))+
-#  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-```
+Na distribuição das doações entre as cidades do estado do TX, temos Austin em segundo, atrás apenas da cidade de Houston, porém quando analisamos o valor total, Dallas vem em segundo, deixando Austin em terceiro. Isto poderia estar relacionada a renda media de cada cidade mas sem os dados de rendimentos não é possível esta analise.
 
 ```{r Distribuição das contribuições na 30 maiores cidades por partido, echo = FALSE, warning = FALSE}
 
@@ -528,25 +552,27 @@ ggplot(aes(x=city_ordered, y=contb_receipt_amt, fill = party),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Com base nas informações de longitude (`lon`) e latitude (`lat`) recolhidas na base de dados de zipcode, mapeei as contribuições realizadas na estado do Texas.
+Por fim fiz uma analise da distribuição geográfica das doações com base nas informações de longitude (`lon`) e latitude (`lat`) recolhidas na base de dados de zipcode.
+
+Como esperado, a maioria das doação estão concentradas na parte leste do estado, onde se localizam as cidades com maior quantidade de contribuições: Houston, Austin e Dallas.
 
 ```{r Distribuição espacial das distribuições no estado do Texas, echo=FALSE}
 
 #Distribuição espacial das contribuições
 ggplot(aes(x = lon, y = lat),
        data = subset(USACampaign, !is.na(lon) &  !is.na(lat)))+
-  geom_point(alpha = 0.05)+
+  geom_point(alpha = 0.01)+
   theme(legend.position="bottom")
 
 #Distribuição espacial das contribuições no estado do TX
 texas <- readShapeSpatial("tl_2017_48_cousub/tl_2017_48_cousub.shp")
 summary(texas)
 
-plot(texas)
+texas@data$color <- ifelse(texas@data$NAME %in% c("Houston","Dallas","Austin"), 'red', 'white')
+
+plot(texas, border=gray(0.8), col = as.character(texas@data$color))
 points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
 ```
-
-
 
 # Análise Bivariada
 
@@ -558,16 +584,14 @@ points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
 
 
 
-
 # Seção de Gráficos Multivariados
 
 ```{r echo=FALSE, Multivariate_Plots}
 #set.seed(20022012)
 
 ggplot(aes(x = lon, y = lat, color = cand_nm),
-       data = subset(USACampaign, !is.na(city)))+
-  geom_point()+
-  theme(legend.position="bottom")
+       data = subset(USACampaign, !is.na(city) & cand_nm %in% top7_cand))+
+  geom_point(alpha = 0.05)
   #guides(color=FALSE)
 
 ```
@@ -621,7 +645,9 @@ DIFICULDADE COM MAPA
 
 Abaixo o link para referências usadas para este trabalho
 
- - Detailed Files About Candidates, Parties and Other Committees - [FEC](http://classic.fec.gov/finance/disclosure/ftpdet.shtml)
+- Detailed Files About Candidates, Parties and Other Committees - [FEC](http://classic.fec.gov/finance/disclosure/ftpdet.shtml)
 
 - Arquivo SHP das cidades do estado do Texas - [United States Census](https://www.census.gov/geo/maps-data/data/cbf/cbf_cousub.html)
+
+- Limites de contribuições por candidato - [FEC](https://transition.fec.gov/info/contriblimitschart1516.pdf)
 
