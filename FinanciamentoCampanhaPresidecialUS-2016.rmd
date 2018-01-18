@@ -407,6 +407,10 @@ ggplot(aes(x=occup_ordered),
   xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Distribuição das contribuições por candidato entre as 10 principais ocupações do contribuintes')
+
+boxplot(y=contb_receipt_amt, x=contbr_occupation, 
+       data = subset(USACampaign, contbr_occupation %in% top10_occupation), outline = FALSE)
+
 ```
 
 # Análise Univariada
@@ -462,6 +466,7 @@ Nesta analise percebemos que os valores doados se iniciaram principalmente 2 tri
 g <- ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
   geom_point(alpha = 1/100, position = 'jitter', color = 'orange')+
+  geom_line(stat = 'summary', fun.y = 'mean', color = cand_nm)+
   geom_smooth()+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Distribuição das contribuições no período')
@@ -594,6 +599,11 @@ points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
 
 ### Discuta sobre alguns dos relacionamentos observados nesta parte da investigação. Como os atributos de interesse variaram no conjunto de dados?
 
+-> Contribuição no tempo
+
+-> Contribuição por candidato
+
+
 ### Você observou algum relacionamento interessante entre os outros atributos (os que não são de interesse)?
 
 ### Qual foi o relacionamento mais forte encontrado?
@@ -609,6 +619,13 @@ ggplot(aes(x = lon, y = lat, color = cand_nm),
        data = subset(USACampaign, !is.na(city) & cand_nm %in% top7_cand))+
   geom_point(alpha = 0.05)
   #guides(color=FALSE)
+
+####
+#
+# 1) Grafico de doação ao longo do tempo por candidato
+# 2) 
+#
+####
 
 ```
 
