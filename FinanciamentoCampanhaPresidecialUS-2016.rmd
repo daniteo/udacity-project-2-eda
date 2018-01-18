@@ -183,7 +183,7 @@ summary(USACampaign)
 
 ```
 
-O dataset tratado contem 548.396 observações com 28 variaveis. O dataset original (sem tratamento) contém 18 variáveis.
+O dataset tratado contem 548.396 observações com 29 variaveis. O dataset original (sem tratamento) contém 18 variáveis.
 
 # Seção de Gráficos Univariados
 
@@ -252,7 +252,8 @@ boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem)
 boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem, outline=FALSE)
 
 ```
-Na analise a seguir procurei fazer uma avaliação identificando como se foram realizadas as contribuições ao longo do período. Iniciei a analise verificando a distribuição das doações por ano e, em seguida, realizei a analise por mês.
+
+Na analise a seguir procurei fazer uma avaliação identificando como foram realizadas as contribuições ao longo do período. Iniciei a analise verificando a distribuição das doações por ano e, em seguida, realizei a analise por mês.
 
 Por fim, foquei no periodo de 2016, que é onde ocorreram a maior quantidade de doações.
 
@@ -332,7 +333,8 @@ ggplot(aes(x = contb_receipt_amt),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Decidi classificar os valores de contribuição considerando as seguintes faixas de valores:
+Para uma melhor visualização de como a quantidade de doações é inversamente proporcional ao valor, decidi classificar os valores de contribuição considerando as seguintes faixas de valores:
+
 - Até 100,00
 - 100,01 a 500,00
 - 500,01 a 2.000,00
@@ -351,8 +353,13 @@ ggplot(aes(x=contb_receipt_amt_range),
 
 ```
 
+Para uma analise com base nas cidades, decidi aplicar um filtro inicial uma vez que existem cerca de 1300 cidades diferentes registradas. Desta forma decidi gerar o histograma apenas para as 30 cidades com maior número de contriuições.
+
+Nesta analise percebemos que as principais cidades do estado então entre aquelas com mais números de contribuição.
 
 ```{r Distribuição das contribuições na 30 maiores cidades, echo = FALSE, warning = FALSE}
+
+str(as.factor(USACampaign$city))
 
 USACampaign.by_city <- USACampaign %>%
                       group_by(city) %>%
@@ -375,10 +382,13 @@ ggplot(aes(x=city_ordered),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
+De forma semelhante à análise anterior, para o histograma por profissão do contribuinte considerei apenas as 10 com mais contribuições.
 
 ```{r Distribuicao por ocupação, echo=FALSE}
 
-USACampaign.by_occupation <- USACampaign %>%
+str(as.factor(USACampaign$contbr_occupation))
+
+USACampaign.by_occupation <- subset(USACampaign, !is.na(contbr_occupation)) %>%
                       group_by(contbr_occupation) %>%
                       summarise(count = n()) %>%
                       arrange(desc(count))
@@ -403,7 +413,7 @@ ggplot(aes(x=occup_ordered),
 
 ### Qual é a estrutura do conjunto de dados?
 
-O conjunto de dados possui  registros de contribuições para o estado de TX, com 28 atributos no arquivo tratado e 18 no arquivo original.
+O conjunto de dados possui 548372 registros de contribuições para o estado de TX, com 29 atributos no arquivo tratado e 18 no arquivo original.
 
 ### Quais são os principais atributos de interesse deste conjunto de dados?
 
@@ -424,6 +434,7 @@ Além destas existem variáveis importantes como o partido do candidato.
 ### Você criou novas variáveis a partir dos atributos existentes no conjunto de dados?
 
 Sim. Foram criados as seguintes variaveis: 
+
 - A partir da data, criei colunas com os componentes da data de contribuição (dia, mês e ano)
 - Foram incorporados dados do dataset de CEP (zipcode): cidade, longitude e latitude 
 - Foi adicionada uma coluna com faixas dos valores doados.
@@ -438,11 +449,13 @@ As datas de contribuição carregadas originalmente como `caracter`, foram conve
 
 Conforme apresentado na seção de tratamento de dados, fiz uma ajuste nos nomes das cidades para eleminar as cidades iguais registradas com grafias diferentes. O mesmo tratamento foi realizado para a ocupação dos contribuintes.
 
-Todos os tratamentos foram realizados num script python a parte (`tratarDados.py`).
+Todos os tratamentos foram realizados num script python a parte (`tratarDados.py`)[tratarDados.py].
 
 # Seção de Gráficos Bivariados
 
 Aqui fiz uma analise das distriuição dos valores ao longo do tempo. No primeiro gráfico foi feita uma analise mais ampla por todo o período compreendido no dataset. No segundo reduzi o faixa de valores para o ano de 2016 e foi considerada as contribuições realizadas dentro de 99% da amostragem.
+
+Nesta analise percebemos que os valores doados se iniciaram principalmente 2 trimestre de 2015 com um média ligeiramente maior, se mantendo quase contantes a partir de agosto de 2015 até o final de 2016.
 
 ```{r Valores de contrbuição ao longo do tempo, echo = FALSE}
 
@@ -467,9 +480,9 @@ g+
 
 ```
 
-Nesta analise podemos perceber a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares, que era o limite máximo permitido para pessoas físicas [Limites de contribuições - FEC](https://transition.fec.gov/info/contriblimitschart1516.pdf). Considerando eleições primárias e geral, é possível uma doação de $5.400,00 (2.700 para cada).
+Podemos perceber também a presença de faixas horizontais bem definidas para os valores doados com mais frequncias. Estes normalmente ão valores redodndos. Uma faixa bem definida é a 2700 dolares, que era o limite máximo permitido para pessoas físicas [Limites de contribuições - FEC](https://transition.fec.gov/info/contriblimitschart1516.pdf). Considerando eleições primárias e geral, é possível uma doação de $5.400,00 (2.700 para cada).
 
-Estas mesmas faixas podem ser percebidas quando analisamos a os valores de contribuição por candidato, como visto abaixo.
+Estas mesmas faixas podem ser percebidas quando analisamos a os valores de contribuição por candidato, como visto abaixo. Percebe-se também, como já visto no histograma por faixa de valor doado, que a maioria das contribuições estão abaixo de U$ 500,00.
 
 ```{r Valor de contibuições para cada candidato, echo=FALSE}
 ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
@@ -487,7 +500,7 @@ g+scale_y_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)
 
 ```
 
-Nesta sequencia de gráficos vemos as relações entre candidatos e valores de contribuição. Ao contrário do que normalmente seria esperado, o candidato com mais contribuições não é o mesmo com maior valor arrecadado. O candidato **Jeb Bush**, apesar de possuir menos de 5% das contribuições de **Bernard Sanders**, conseguiu arrecadar um pouco que o este. No caso especial de Jeb Bush, isto pode ter relação com o fato do Texas ser o seu estado Natal, além da sua  relação com os outros 2 ex-presidentes Bush (pai e irmão).
+Nesta sequencia de gráficos vemos as relações entre os 7 candidatos citados anteiormente e os valores de contribuição. Ao contrário do que normalmente seria esperado, o candidato com mais contribuições não é o mesmo com maior valor arrecadado. O candidato **Jeb Bush**, apesar de possuir menos de 5% das contribuições de **Bernard Sanders**, conseguiu arrecadar um pouco que o este. No caso especial de Jeb Bush, isto pode ter relação com o fato do Texas ser o seu estado Natal, além da sua  relação com os outros 2 ex-presidentes Bush (pai e irmão).
 
 ```{r Valor médio das contribuições, echo=FALSE}
 
@@ -508,7 +521,7 @@ plot_candidato(df, df$valor_medio, 'Valor médio por candidato')
 
 ```
 
-Um comportamento semelhante pode ser observado quando analisamos os 2 principais partidos (Democratas e Republicanos). Embora os democratas tenham uma quantidade de contribuições maior do que a dos republicanos (feitas principalmente em nome de Hillary Cinton), o valor arreacadado do segundo é quase o dobro do primeiro.
+Um comportamento semelhante pode ser observado quando analisamos os 2 principais partidos (Democratas e Republicanos). Embora os democratas tenham uma quantidade de contribuições maior do que a dos republicanos (feitas principalmente em nome de Hillary Cinton), o valor arreacadado do segundo é quase o dobro do primeiro, corroborando com a analise feita anteriormente a partir dos boxplot.
 
 ```{r Distribuição das contribuições por partido e candidato, echo = FALSE}
 
@@ -532,7 +545,7 @@ ggplot(aes(x=party, y=contb_receipt_amt, fill = cand_nm),
 
 ```
 
-Na distribuição das doações entre as cidades do estado do TX, temos Austin em segundo, atrás apenas da cidade de Houston, porém quando analisamos o valor total, Dallas vem em segundo, deixando Austin em terceiro. Isto poderia estar relacionada a renda media de cada cidade mas sem os dados de rendimentos não é possível esta analise.
+Na distribuição das doações entre as cidades do estado do TX, temos Austin em segundo, atrás apenas da cidade de Houston, porém quando analisamos o valor total, Dallas vem em segundo, deixando Austin em terceiro. Isto poderia estar relacionada a renda media de cada cidade mas sem os dados de rendimentos não é possível uma analise mais apurada.
 
 ```{r Distribuição das contribuições na 30 maiores cidades por partido, echo = FALSE, warning = FALSE}
 
@@ -554,7 +567,7 @@ ggplot(aes(x=city_ordered, y=contb_receipt_amt, fill = party),
 
 Por fim fiz uma analise da distribuição geográfica das doações com base nas informações de longitude (`lon`) e latitude (`lat`) recolhidas na base de dados de zipcode.
 
-Como esperado, a maioria das doação estão concentradas na parte leste do estado, onde se localizam as cidades com maior quantidade de contribuições: Houston, Austin e Dallas.
+Como esperado, a maioria das doação estão concentradas na parte leste do estado, onde se localizam as cidades com maior quantidade de contribuições: Houston, Austin, Dallas e San Antonio.
 
 ```{r Distribuição espacial das distribuições no estado do Texas, echo=FALSE}
 
@@ -566,9 +579,12 @@ ggplot(aes(x = lon, y = lat),
 
 #Distribuição espacial das contribuições no estado do TX
 texas <- readShapeSpatial("tl_2017_48_cousub/tl_2017_48_cousub.shp")
-summary(texas)
+#summary(texas)
 
-texas@data$color <- ifelse(texas@data$NAME %in% c("Houston","Dallas","Austin"), 'red', 'white')
+texas@data$color <- ifelse(texas@data$NAME %in% c("Houston"), 'red', 
+                           ifelse(texas@data$NAME %in% c("Dallas"), 'blue', 
+                                  ifelse(texas@data$NAME %in% c("Austin"), 'green',
+                                         ifelse(texas@data$NAME %in% c("San Antonio"), 'yellow', 'white'))))
 
 plot(texas, border=gray(0.8), col = as.character(texas@data$color))
 points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
