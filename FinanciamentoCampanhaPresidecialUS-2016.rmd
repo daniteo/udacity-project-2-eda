@@ -206,6 +206,9 @@ agrupado_por_candidato <- function() {
 
 USACampaign.by_candidate <- agrupado_por_candidato()
 
+candidatos_ordenados_por_qtde <- as.ordered(arrange(USACampaign.by_candidate, desc(qtde))$cand_nm)
+candidatos_ordenados_por_valor_total <- arrange(USACampaign.by_candidate, desc(valor_total))$cand_nm
+
 hist_cand <- function(df) {
     ggplot(aes(x=cand_nm, fill = party), 
        data = df)+
@@ -229,7 +232,7 @@ hist_cand_ordenado(USACampaign.by_candidate$qtde)
 #Histograma ordenado por valor total
 hist_cand_ordenado(USACampaign.by_candidate$valor_total)
 
-top7_cand <- head(USACampaign.by_candidate$cand_nm, 7)
+top7_cand <- head(candidatos_ordenados_por_qtde, 7)
 
 hist_cand(subset(USACampaign, cand_nm %in% top7_cand))
 
@@ -408,8 +411,11 @@ ggplot(aes(x=occup_ordered),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Distribuição das contribuições por candidato entre as 10 principais ocupações do contribuintes')
 
-boxplot(y=contb_receipt_amt, x=contbr_occupation, 
-       data = subset(USACampaign, contbr_occupation %in% top10_occupation), outline = FALSE)
+ggplot(aes(y=contb_receipt_amt, x=contbr_occupation), 
+       data = subset(USACampaign, contbr_occupation %in% top10_occupation), outline = FALSE)+
+  geom_boxplot()+
+  ylim(0,125)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
 
@@ -421,16 +427,14 @@ O conjunto de dados possui 548372 registros de contribuições para o estado de 
 
 ### Quais são os principais atributos de interesse deste conjunto de dados?
 
-Os principais atributos deste conjunto de dados são os candidatos (*cand_nm*) e os valores das contribuições (*contb_receipt_amt*).
+A minha intenção neste trabalho é analisar como foi a distribuição de doações para os cnadidatos. Para esta análise, as principais atributos deste conjunto de dados são os candidatos (*cand_nm*), os valores das contribuições (*contb_receipt_amt*) e a data de contribuição (*contb_receipt_dt*).
 
 ### Quais outros atributos você acha que podem lhe auxiliar na investigação destes atributos de interesse?
 
 Atributos realcionados a origem das contribuições serão muito úteis nesta analise. Entre elas estão:
 
 - Nome do comite
-- Nome do contribuinte
-- Data de contribuição
-- Ocupação do contribuinte
+- Profisssão do contribuinte
 - Cidade do contribuinte
 
 Além destas existem variáveis importantes como o partido do candidato.
@@ -466,8 +470,9 @@ Nesta analise percebemos que os valores doados se iniciaram principalmente 2 tri
 g <- ggplot(aes(x = contb_receipt_date, y = contb_receipt_amt), 
        data = USACampaign)+
   geom_point(alpha = 1/100, position = 'jitter', color = 'orange')+
-  geom_line(stat = 'summary', fun.y = 'mean', color = cand_nm)+
+#  geom_line(stat = 'summary', fun.y = 'sum')+
   geom_smooth()+
+  geom_hline(yintercept = 2700)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Distribuição das contribuições no período')
 
@@ -620,12 +625,11 @@ ggplot(aes(x = lon, y = lat, color = cand_nm),
   geom_point(alpha = 0.05)
   #guides(color=FALSE)
 
-####
-#
-# 1) Grafico de doação ao longo do tempo por candidato
-# 2) 
-#
-####
+ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, fill=contb_receipt_amt_range), data = USACampaign)+
+  geom_bar(stat = 'summary', fun.y = 'sum')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "bottom")+
+  facet_grid(party~contb_receipt_dt_year)
+
 
 ```
 
@@ -644,10 +648,37 @@ ggplot(aes(x = lon, y = lat, color = cand_nm),
 ### Primeiro Gráfico
 ```{r echo=FALSE, Plot_One}
 
+ggplot(aes(y = contb_receipt_amt, x = contb_receipt_date, fill = contb_receipt_amt_range), 
+       data=subset(USACampaign, cand_nm %in% head(candidatos_ordenados_por_valor_total, 7) & !is.na(contb_receipt_amt)))+
+  geom_area(stat = 'summary', fun.y = 'sum')+
+  scale_y_continuous(breaks=seq(0,400000,50000), limits = c(0,400000))+
+  scale_x_date(date_breaks = "6 months", 
+               date_minor_breaks = "3 months", 
+               date_labels = "%b/%Y",
+               limits = as.Date(c("2015-01-01","2016-12-31")))+
+  #ylim(0,4e5)+
+  facet_wrap(~cand_nm)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")+
+  ggtitle('Doações ao longo do tempo, por candidato')
+
+ggplot(aes(x = contb_receipt_date, fill = contb_receipt_amt_range), 
+       data=subset(USACampaign, cand_nm %in% head(candidatos_ordenados_por_qtde, 7) & !is.na(contb_receipt_amt)))+
+  geom_area(stat = 'count')+
+  scale_x_date(date_breaks = "6 months", 
+               date_minor_breaks = "3 months", 
+               date_labels = "%b/%Y",
+               limits = as.Date(c("2015-01-01","2016-12-31")))+
+  #ylim(0,4e5)+
+  facet_wrap(~cand_nm)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")+
+  ggtitle('Doações ao longo do tempo, por candidato')
+
+
 ```
 
 ### Descrição do Primeiro Gráfico
 
+O primeiro gráfico apresenta as doações ao longo do perídio de doação para cada candidato. Nele podemos notar algumas características interesantes. 
 
 ### Segundo Gráfico
 ```{r echo=FALSE, Plot_Two}
