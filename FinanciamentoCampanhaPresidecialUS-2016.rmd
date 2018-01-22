@@ -386,7 +386,7 @@ O valor de 2.700 foi escolhido por este ser o limite de doações por contribuin
 
 ```{r echo=FALSE, warning=FALSE}
 # Cria faixa para os valores de contribuição
-USACampaign$contb_receipt_amt_range <- cut(USACampaign$contb_receipt_amt, c(0,100,1000,2700,max(USACampaign$contb_receipt_amt)))
+USACampaign$contb_receipt_amt_range <- cut(USACampaign$contb_receipt_amt, c(0,100,500,2700,max(USACampaign$contb_receipt_amt)))
 
 ggplot(aes(x=contb_receipt_amt_range), 
        data = USACampaign)+
@@ -414,36 +414,6 @@ ggplot(aes(x=city_ordered),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-De forma semelhante à análise anterior, para o histograma por profissão do contribuinte considerei apenas as 15 com mais contribuições.
-
-```{r Distribuicao por ocupação, echo=FALSE, warning=FALSE}
-
-str(as.factor(USACampaign$contbr_occupation))
-
-lista_ordenada_ocupacao <- lista_ordenada("contbr_occupation", ordenado_por = "qtde")$contbr_occupation
-
-# Ordena as cidades com base na quantidade de contribuições
-USACampaign$contbr_occupation <- factor(USACampaign$contbr_occupation, lista_ordenada_ocupacao)
-
-df_occup <- subset(USACampaign, !is.null(contbr_occupation) & !is.na(contbr_occupation) & contbr_occupation %in% head(lista_ordenada_ocupacao, 15))
-
-# Distribuição das contribuições entre as cidades com mais contribuições
-ggplot(aes(x=contbr_occupation), 
-       data = df_occup)+
-  geom_bar(stat = 'count')+
-  xlab("Cidades do estado do TX")+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-  ggtitle('Distribuição das contribuições por candidato entre as 10 principais ocupações do contribuintes')
-
-ggplot(aes(y=contb_receipt_amt, x=contbr_occupation), 
-       data = df_occup, outline = FALSE)+
-  geom_boxplot()+
-  ylim(0,125)+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-rm(lista_ordenada_ocupacao)
-
-```
 
 # Análise Univariada
 
@@ -691,9 +661,9 @@ Na distribuição dos valores por candidato, vemos claramente como existe um mig
 
 ### Você observou algum relacionamento interessante entre os outros atributos (os que não são de interesse)?
 
---> Partidos?
+Em relação as doações por municípios, foi possível perceber uma relação do volume de doações com as principais cidades do estado.
 
---> Cidades?
+--> Partidos?
 
 ### Qual foi o relacionamento mais forte encontrado?
 
@@ -701,18 +671,17 @@ Na distribuição dos valores por candidato, vemos claramente como existe um mig
 
 # Seção de Gráficos Multivariados
 
-```{r echo=FALSE, Multivariate_Plots}
-#set.seed(20022012)
+No primeiro gráfico adicinamos a váriavel de cor ao gráfico apresentado na seção anterior para identificar as doações referente as primárias e as gerais. Nele fica ainda mais claro a mudança do destino das doaçoes republicanas para Donald Trump.
 
->>> Adicionar grafico com distribição de doações vs cand vs previa
-
-ggplot(aes(x = lon, y = lat, color = cand_nm),
-       data = subset(USACampaign, !is.na(city) & cand_nm %in% top7_cand))+
-  geom_point(alpha = 0.05)+
-  ylim(25,37)+
-  xlim(-110,-90)+
-  theme(legend.position="bottom")
-
+```{r echo=FALSE, warning=FALSE}
+ggplot(aes(y=cand_nm, x=contb_receipt_dt_month, color = election_tp), 
+       data=subset(USACampaign, cand_nm %in% top7_cand))+
+  geom_point(alpha = 1/100, position = 'jitter')+
+  geom_vline(xintercept = as.Date("2016-05-01"), linetype = 3, color = 'red')+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))+
+  scale_x_date(date_breaks = "4 months", 
+               date_labels = "%b/%Y")+
+  facet_wrap(~party)
 ```
 
 No gráfico abaixo analisei o total de doações por mês e partido, destacando os valores de contribuição nas faixas definidas. Focamos nos partidos democrata e republicano e nos anos de 2015 e 2016 por serem os responosáveis pela maioria dos dados.
@@ -820,28 +789,12 @@ Um outro interação interessante foi a mudança das contribuições republicana
 
 top3_cand_total <- lista_ordenada("cand_nm", 3, ordenado_por = "total")$cand_nm
 
-ggplot(aes(y = contb_receipt_amt, x = contb_receipt_dt, fill = contb_receipt_amt_range), 
-       data=subset(USACampaign, cand_nm %in% top3_cand_total & !is.na(contb_receipt_amt)))+
-  geom_area(stat = 'summary', fun.y = 'sum')+
-  geom_vline(xintercept =  as.Date("2016-03-01"), linetype = 2)+
-  geom_vline(xintercept =  as.Date("2016-05-24"), linetype = 2, color = 'red')+
-  scale_y_continuous(breaks=seq(0,400000,50000), limits = c(0,400000))+
-  scale_x_date(date_breaks = "4 months", 
-               date_minor_breaks = "2 months", 
-               date_labels = "%b/%Y",
-               limits = as.Date(c("2015-01-01","2016-12-31")))+
-  xlab("Data")+
-  ylab("Total doado")+
-  facet_wrap(~cand_nm)+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position="bottom")+
-  ggtitle('Valor total de doações ao longo do tempo, por candidato')
-
-
 ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, fill=contb_receipt_amt_range), 
        data = subset(USACampaign, cand_nm %in% top3_cand_total & contb_receipt_dt_year %in% c("15","16")))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position = "bottom")+
+  scale_y_continuous(breaks=seq(0,4e6,5e5))+
   scale_x_date(date_breaks = "4 months", 
                date_minor_breaks = "2 months", 
                date_labels = "%b/%Y",
@@ -855,7 +808,7 @@ ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, fill=contb_receipt_amt
 
 ggplot(aes(x = contb_receipt_dt, fill = contb_receipt_amt_range), 
        data=subset(USACampaign, cand_nm %in% top3_cand_total & !is.na(contb_receipt_amt)))+
-  geom_area(stat = 'count')+
+  geom_histogram()+
   geom_vline(xintercept =  as.Date("2016-03-01"), linetype = 2)+
   geom_vline(xintercept =  as.Date("2016-05-24"), linetype = 2, color = 'red')+
   scale_x_date(date_breaks = "4 months", 
@@ -884,6 +837,8 @@ Quando analisamos os valores em um grafico de barra, vemos facilmente a influenc
 
 ### Segundo Gráfico
 ```{r echo=FALSE, Plot_Two}
+
+#Para este gráfico optei fazer um gráfico para cada candidato ao invés de usar as opções de facet_wrap pois com este layer o espaço para a visualização do gráfico ficava muito reduzido.
 
 df_por_candidato <- function(candidato) {
   
@@ -945,6 +900,11 @@ df.by_party$party_most_contr <- ifelse(is.na(df.by_party$DEM), "REP",
 
 table(df.by_party$party_most_contr)
 
+ggplot(aes(y=contb_receipt_amt, x=contb_receipt_dt_month, color=cand_nm), 
+       data = subset(USACampaign, cand_nm %in% c("Clinton, Hillary Rodham","Trump, Donald J.")))+
+  geom_line(stat = 'summary', fun.y = sum)+
+  facet_wrap(~contb_receipt_amt_range)
+
 #texas@data <- left_join(texas@data, df.by_party, by = c("NAME", "city"))
 
 #texas@data$color <- ifelse(df.by_party[texas@data$NAME,]$party_most_contr == "DEM", 'red', 
@@ -966,7 +926,7 @@ ggplot(data = ia, aes(long, lat)) +
 
 data(us.cities)
 texas_cities <- subset(us.cities, country.etc == 'TX')
-texas_cities$name <- gsub(" TX","",texas_cities$name)
+texas_cities$name <- tolower(gsub(" TX","",texas_cities$name))
 
 ggplot(texas_cities, aes(long, lat)) +
   geom_point(aes(size = pop))+
@@ -1006,6 +966,10 @@ Um ponto importante que notei é que só consegui evoluir no trabalho a partir d
 Uma dificuldade que tive foi de encontrar as regras sobre o limite de doações para os candidatos. Embora tenha encontrado a definição de limites de 2.700 por candidato, foi possível notar diversas contribuições acima deste valor, especialmente nas quantias de $5.400 e $10.800. 
  
 Encontrei grandes dificuldades em se trabalhar com os mapas, principalmente devido as divergencias de dados para cruzamento de informações entre as base de mapa e o dataset das eleições, em especial na normalização dos nomes do munícipios.
+
+## Conclusão
+
+Apesar das dificuldades encontradas para a execução do trabalho, acredito que eu tenho obtido sucesso nas análises realizadas, conseguindo identificar o comportamento das doações realizadas na campanha presidencial de 2016 para o estado do Texas.
 
 ## Futuros trabalhos
 
