@@ -17,6 +17,13 @@ Antes de uma analise dos dados foi necessário o tratamento do dataset. Foram id
 
 As datas estão da base de dados estão armazenadas como texto no formato DD-MMM-AA. Separei os componentes da data em colunas para dia, mês e ano. 
 
+## Campo election_tp - Tipo de eleição
+
+Para o tipo de eleição foi considerado o seguinte tratamento:
+
+- Para os tipos vazios, foi considerada a data da contribuição. Contribuições ocorridas a partir de abril/2016 foram consideradas como "G2016" e aquelas anteriores a esta data foram consideradas "P2016".
+- As ocorrencias com o tipo "P2012" foram alterados para "P2016"
+
 ## Campo contbr_city - Cidade do contribuinte
 
 No resumo percebi que o número de cidades diferentes dos contribuintes era muito grande (2327 cidades). Numa analise dos dados notei que mesmas cidades estavam registradas com grafia diferentes, por erro ou abreviação do nome. Um exemplo seria o Brooklyn que aparece na base de dados com diversos nomes: BROOKLIN, BROOKLN, BROOKLY, BROOKLYB e BROOKLYN, entre outros.

@@ -5,13 +5,14 @@
 Faz o tratamento dos dados de financiamento para campanha presidencial dos EUA de 2016.
 Os tratamentos realizados são os seguintes:
 - Verifica o valor da contribuição
-- Separa a data nos componentes dia, mês e ano
+- Separa a data nos componentes mês e ano
 - Cria coluna com o partido dos candidatos
 - Cria coluna com o nome dos comites
 """
 import csv
 import zipcode
 import pprint
+from datetime import datetime
 
 ESTADO_EUA = "TX"
 
@@ -49,10 +50,21 @@ def tratar_valor_contribuicao(valor_contribuicao):
 
 def tratar_data_contribuicao(data):
     data_separada = data.split('-')
-    dia = data_separada[0]
-    mes = data_separada[1]
+    mes = "01-"+data_separada[1]+"-"+data_separada[2]
     ano = data_separada[2]
-    return dia, mes, ano
+    return mes, ano
+
+def tratar_tipo_eleicao(tipo, data):
+    if tipo == "P2012":
+        return "P2016"
+    elif tipo == "":
+        data_corte = datetime(2016, 5, 1)
+        data_doacao = datetime.strptime(data, '%y-%b-%d')
+        if data_doacao < data_corte:
+            return "P2016"
+        else:
+            return "G2016"
+    return tipo
 
 def tratar_ocupacao(ocupacao):
     if ocupacao in ["OWNER", "SELF", "BUSINESS OWNER", "SMALL BUSINESS OWNER","SELF EMPLOYED"]:
@@ -113,8 +125,9 @@ def tratar_dados_financiamento(dados, candidatos, comite):
 
         data['party'] = candidatos[data['cand_id']][2]
 
-        dia, mes, ano = tratar_data_contribuicao(data['contb_receipt_dt'])
-        data['contb_receipt_dt_day'] = dia
+        data['election_tp'] = tratar_tipo_eleicao(data['election_tp'], data['contb_receipt_dt'])
+
+        mes, ano = tratar_data_contribuicao(data['contb_receipt_dt'])
         data['contb_receipt_dt_month'] = mes
         data['contb_receipt_dt_year'] = ano
 
