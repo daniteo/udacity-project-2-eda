@@ -12,4 +12,4 @@ Antes de iniciar este trabalho, é necessário descompactar os arquivos de dados
 > python tratarDados.py
 ```
 
-Para informações do tratamento de dados realizados, veja o documento [Tratamento de dados.md](Tratamento de dados.md)
+Para informações do tratamento de dados realizados, veja o documento [Tratamento de dados.md](https://github.com/daniteo/udacity-project-2-eda/blob/master/Tratamento de dados.md)
