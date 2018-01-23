@@ -657,14 +657,6 @@ Como esperado, a maioria das doação estão concentradas na parte leste do esta
 
 ```{r Distribuição espacial das distribuições no estado do Texas, echo=FALSE, warning=FALSE}
 
-#texas <- readShapeSpatial("tl_2017_48_cousub/tl_2017_48_cousub.shp")
-#summary(texas)
-
-#texas@data$color <- ifelse(texas@data$NAME %in% c("Houston"), 'red', 
-#                           ifelse(texas@data$NAME %in% c("Dallas"), 'blue', 
-#                                  ifelse(texas@data$NAME %in% c("Austin"), 'green',
-#                                         ifelse(texas@data$NAME %in% c("San Antonio"), 'yellow', 'white'))))
-
 #Distribuição espacial das contribuições no estado do TX
 ia <- map_data("county", "texas")
 ggplot(ia, aes(long, lat)) +
@@ -673,8 +665,7 @@ ggplot(ia, aes(long, lat)) +
   ylim(25,37)+
   xlim(-110,-90)
 
-#plot(texas, border=gray(0.8)) #, col = as.character(texas@data$color))
-#points(USACampaign$lon,USACampaign$lat,pch=18,col=I('#9999FF'))
+
 ```
 
 # Análise Bivariada
