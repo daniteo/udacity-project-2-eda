@@ -23,6 +23,15 @@ library(reshape2)
 ```
 
 
+Antes de iniciar este trabalho, é necessário descompactar os arquivos de dados e executar o script de tratamento.
+
+```
+> tar -zxvf P00000001-TX.tgz 
+> tar -zxvf P00000001-NY.tgz 
+> python tratarDados.py
+```
+
+
 # Introdução
 
 Para este projeto escolhi uma das bases de dados sugeridas pela Udacity: [Financiamento da Campanha Presidencial dos EUA de 2016](http://classic.fec.gov/disclosurep/pnational.do). 
