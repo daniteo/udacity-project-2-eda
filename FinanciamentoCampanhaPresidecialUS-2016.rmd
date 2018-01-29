@@ -77,7 +77,8 @@ sum(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",]$c
 
 dim(USACampaign[USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED",])
 
-USACampaign$hillary_comitte <- ifelse(USACampaign$contbr_nm == "HILLARY VICTORY FUND - UNITEMIZED", "Y", "N")
+USACampaign$hillary_comitte <- ifelse(USACampaign$contbr_nm == 
+                                        "HILLARY VICTORY FUND - UNITEMIZED", "Y", "N")
 ```
 
 Quando comparamos as contribuições do contribuinte *HILLARY VICTORY FUND - UNITEMIZED* e os demais contribuintes, vemos que o valor total das contribuições são próximos, porém as quantidade de contribuições da comite da Hillary são significamente menores.
@@ -89,7 +90,7 @@ Quando comparamos as contribuições do contribuinte *HILLARY VICTORY FUND - UNI
 ggplot(aes(x=hillary_comitte), 
        data = USACampaign)+
   geom_bar(stat = 'count')+
-  scale_y_continuous(breaks=seq(0,700000,50000))+
+  scale_y_continuous(breaks=seq(0, 700000, 50000))+
   xlab("HILLARY VICTORY FUN")+
   ylab("Qtde de contribuições")+
   ggtitle('Comparação das contribuições entre comite da Hillary e outros')
@@ -129,8 +130,8 @@ g <- ggplot(aes(x=contb_range),
 g+
   scale_y_continuous(breaks=seq(0, 600000, 50000))
 
-#Histograma com escala logaritima em y para mostra quantidades na faixa de valores
-#acima de 50000
+#Histograma com escala logaritima em y para mostra quantidades na faixa de 
+#valores acima de 50000
 g+
   scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000),
                 labels=c("10", "100", "1000", "10000", "100000"))
@@ -281,14 +282,17 @@ hist_cand_ordenado <- function(campo, cond = NULL, titulo) {
 
 #Histograma ordenado por qtde
 hist_cand_ordenado("qtde", 
-                   titulo = "Histograma das contribuições (ordenados por quantidade)")
+            titulo = "Histograma das contribuições (ordenados por quantidade)")
 
 #Histograma ordenado por valor total
 hist_cand_ordenado("total", 
-                   titulo = "Histograma das contribuições (ordenados por valor total)")
+            titulo = "Histograma das contribuições (ordenados por valor total)")
 
-top7_cand <- as.ordered(lista_ordenada("cand_nm", ordenado_por = "qtde", quantidade =  7)$cand_nm)
-hist_cand_ordenado("qtde", top7_cand, titulo = "Histograma das contribuições (Top 7)")
+top7_cand <- as.ordered(lista_ordenada("cand_nm", 
+                                       ordenado_por = "qtde", 
+                                       quantidade =  7)$cand_nm)
+hist_cand_ordenado("qtde", top7_cand, 
+            titulo = "Histograma das contribuições (Top 7)")
 
 ggplot(aes(y=contb_receipt_amt, x=cand_nm), 
        data = subset(USACampaign, cand_nm %in% top7_cand), outline = FALSE)+
@@ -313,7 +317,8 @@ ggplot(aes(x=party),
 boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem)
 
 #Boxplot sem outline
-boxplot(contb_receipt_amt ~ party, data = USACampaign.rep_and_dem, outline=FALSE)
+boxplot(contb_receipt_amt ~ party, 
+        data = USACampaign.rep_and_dem, outline=FALSE)
 
 ```
 
@@ -376,25 +381,20 @@ ggplot(aes(x=contb_receipt_amt),
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-Para uma analise de um espectro maior de valores, reduzi o binwidth em 10x. Na sequência apliqei uma escala logaritima para exibir melhor o valores com menos doações e reduzi o limite do eixo x com o objetivo de focar nos valores de contribuições mais frequentes, chegando no limite de um quartil de 95%.
+Para uma analise de um espectro maior de valores, reduzi o binwidth em 10x. Na sequência reduzi o limite do eixo x com o objetivo de focar nos valores de contribuições mais frequentes, chegando no limite de um quartil de 95%. Por fim, apliqei uma escala logaritima para exibir melhor o valores com menos doações.
 
 ```{r Distribuição das contribuições por valor 2, echo = FALSE, warning=FALSE}
 g <- ggplot(aes(x=contb_receipt_amt), 
        data = USACampaign)+
-  geom_histogram(binwidth = 10)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 #Exibe o primeiro grafico
 g +
+  geom_histogram(binwidth = 10)+
   scale_x_continuous(breaks = seq(0, 15000, 2500))
 
 summary(USACampaign$contb_receipt_amt)
 
-#Aplica a escola logaritimica no grafico anterior
-g +
-  scale_x_continuous(breaks = seq(0, 15000, 2500))+
-  scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000))
-  
 #Removendo os outliers
 quantile(USACampaign$contb_receipt_amt, 0.95)
 
@@ -408,6 +408,14 @@ ggplot(aes(x = contb_receipt_amt),
                                   50))+
   scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000))+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#Aplica a escala logaritimica no eixo y ,no grafico anterior
+g +
+  geom_histogram(bins = 25)+
+  scale_x_log10()
+#  scale_y_log10(breaks=c(10, 100, 1000, 10000, 100000))
+  
+
 ```
 
 Abaixo uma comparação entre a quantidade de doações entre as eleições primárias (P2016) e gerais (G2016). Nela vemos que as primárias tiveram mais do dobra de contribuições. Isso pode ser explicado pelo fato de termos mais candidatos, além de um tempo maior para doações.
@@ -416,7 +424,7 @@ Abaixo uma comparação entre a quantidade de doações entre as eleições prim
 ggplot(aes(x = election_tp), 
        data = subset(USACampaign, election_tp %in% c("G2016", "P2016")))+
   geom_bar(stat = 'count')+
-  scale_y_continuous(breaks=seq(0,4e5,50000))
+  scale_y_continuous(breaks=seq(0, 4e5, 50000))
 ```
 
 Para uma melhor visualização de como a quantidade de doações é inversamente proporcional ao valor, decidi classificar os valores de contribuição considerando as seguintes faixas de valores:
@@ -434,7 +442,7 @@ O valor de 2.700 foi escolhido por este ser o limite de doações por contribuin
 # Cria faixa para os valores de contribuição
 USACampaign$contb_receipt_amt_range <- cut(USACampaign$contb_receipt_amt, 
                                            c(0, 100, 500, 2700, 
-                                             max(USACampaign$contb_receipt_amt)))
+                                            max(USACampaign$contb_receipt_amt)))
 
 ggplot(aes(x=contb_receipt_amt_range), 
        data = USACampaign)+
@@ -546,13 +554,14 @@ g+
                date_labels = "%b/%Y",
                limits = as.Date(c("2015-01-01","2016-12-31")))+
   scale_y_continuous(breaks = seq(0, 6000, 500), 
-                     limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))
+                  limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))
 ```
 
 Na sequencia avaliei o valor total e a média e mediana dos valores de contribuições no tempo.
 
 ```{r}
-#Criei uma estrtura base do gráfico para, na sequencia, adicionar os layers especificos de cada gráfico
+#Criei uma estrtura base do gráfico para, na sequencia, adicionar os layers 
+#especificos de cada gráfico
 g <- ggplot(aes(x = contb_receipt_dt_month, y = contb_receipt_amt), 
        data = USACampaign)+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
@@ -577,10 +586,12 @@ Apesar destas regras, é possível se notar valores de doações acima este limi
 ```{r echo=FALSE}
 table(USACampaign[USACampaign$contb_receipt_amt > 5400,]$cand_nm)
 
-ggplot(aes(y=contb_receipt_amt, fill=cand_nm, x=""), 
+length(USACampaign[USACampaign$contb_receipt_amt > 5400,]$cand_nm)
+
+ggplot(aes(y = contb_receipt_amt, fill = cand_nm, x = ""), 
        data=USACampaign[USACampaign$contb_receipt_amt > 5400,])+
-  geom_bar(width=1, stat="identity")+
-  coord_polar("y", start=0)
+  geom_bar(width = 1, stat = "identity")+
+  coord_polar("y", start = 0)
 ```
 
 Estas mesmas faixas podem ser percebidas quando analisamos a os valores de contribuição por candidato, como visto abaixo. Percebe-se também, como já visto no histograma por faixa de valor doado, que a maioria das contribuições estão abaixo de U$ 500,00.
@@ -594,15 +605,15 @@ g <- ggplot(aes(x=cand_nm, y=contb_receipt_amt), data=USACampaign)+
 g+scale_y_continuous(breaks = seq(0, 20000, 1000))
 
 # Grafico com limite no eixo y para 3000 dolares.
-g+scale_y_continuous(limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)),
-                     breaks = seq(0, 3000, 250))
+g+scale_y_continuous(breaks = seq(0, 3000, 250),
+  limits = c(0, quantile(USACampaign$contb_receipt_amt, 0.99)))
 
 ```
 
 Abaixo temos o comportamente das doações ao longo do tempo para os 7 principais candiatos. Aqui é muito interessante como estão distribuidas as contribuições para os candidatos republicanos. Trump quase não possuia doações nas primárias e passou a ser o destino de grande parte das contribuições republicanas nas eleições gerais após Ted Cruz sair da disputa.
 
 ```{r echo=FALSE, warning=FALSE}
-ggplot(aes(y=cand_nm, x=contb_receipt_dt_month), 
+ggplot(aes(y = cand_nm, x = contb_receipt_dt_month), 
        data=subset(USACampaign, 
                    cand_nm %in% top7_cand & 
                      election_tp %in% c("P2016", "G2016")))+
@@ -613,10 +624,10 @@ ggplot(aes(y=cand_nm, x=contb_receipt_dt_month),
                date_labels = "%b/%Y")
 
 
-ggplot(aes(x=cand_nm, fill = election_tp), 
+ggplot(aes(x = cand_nm, fill = election_tp), 
        data=subset(USACampaign, 
                    cand_nm %in% lista_ordenada("cand_nm", 3, 
-                                               ordenado_por = "total")$cand_nm))+
+                                              ordenado_por = "total")$cand_nm))+
   geom_bar(stat = 'count')
 ```
 
@@ -625,7 +636,7 @@ Nesta sequencia de gráficos vemos as relações entre os 7 candidatos citados a
 ```{r Valor médio das contribuições, echo=FALSE}
 
 plot_candidato <- function(df, campo, titulo = '') {
-  ggplot(aes(x=cand_nm, y=campo), data = df)+
+  ggplot(aes(x = cand_nm, y = campo), data = df)+
     geom_bar(stat = 'identity', fill = I('#99AAFF'))+
     ggtitle(titulo)+
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -646,7 +657,7 @@ Um comportamento semelhante pode ser observado quando analisamos os 2 principais
 
 ```{r Distribuição das contribuições por partido e candidato, echo = FALSE}
 
-ggplot(aes(x=party, fill = cand_nm), 
+ggplot(aes(x=party), 
        data = USACampaign.rep_and_dem)+
   geom_bar(stat = 'count')+
   scale_y_continuous(breaks = seq(0, 300000, 25000))+
@@ -655,6 +666,7 @@ ggplot(aes(x=party, fill = cand_nm),
   ggtitle('Distribuição das contribuições por partido')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position="bottom")
+
 
 ggplot(aes(x=party, y=contb_receipt_amt), 
        data = USACampaign.rep_and_dem)+
@@ -669,7 +681,7 @@ ggplot(aes(x=party, y=contb_receipt_amt),
 No entanto analisando pelo tipo de eleição, percebe-se que o valor total doado para cada tipo segue a tendencia do histograma apresentado na primeira seção. 
 
 ```{r echo=FALSE}
-ggplot(aes(x=election_tp, y=contb_receipt_amt), 
+ggplot(aes(x = election_tp, y = contb_receipt_amt), 
        data = USACampaign.rep_and_dem)+
   geom_bar(stat = 'summary', fun.y = sum)+
   xlab("Eleição")+
@@ -689,11 +701,12 @@ Na análise dos quartis dos valores por municipio, temos uma situação bem inte
 USACampaign$city <- factor(USACampaign$city, lista_ordenada("city")$city)
 top30_city <- lista_ordenada("city", 30, ordenado_por = "qtde")$city
 
-# Distribuição das contribuições entre as cidades com mais contribuições por partido
-ggplot(aes(x=city, fill=party), 
+# Distribuição das contribuições entre as cidades com mais contribuições 
+#por partido
+ggplot(aes(x = city, fill = party), 
        data = subset(USACampaign, city %in% top30_city))+
   geom_bar(stat = 'count')+
-  scale_y_continuous(breaks=seq(0, 70000, 10000), 
+  scale_y_continuous(breaks = seq(0, 70000, 10000), 
                      minor_breaks = seq(0, 75000, 2500))+
   xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -701,7 +714,7 @@ ggplot(aes(x=city, fill=party),
 ggplot(aes(x=city, y=contb_receipt_amt, fill = party), 
        data = subset(USACampaign, city %in% top30_city))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
-  scale_y_continuous(breaks=seq(0, 70000, 10000), 
+  scale_y_continuous(breaks = seq(0, 70000, 10000), 
                      minor_breaks = seq(0, 75000, 2500))+
   xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
@@ -711,7 +724,7 @@ ggplot(aes(x=city, y=contb_receipt_amt),
        data = subset(USACampaign, city %in% top30_city))+
   geom_boxplot()+
   geom_hline(yintercept = 50, linetype = 2, color = 'red')+
-  scale_y_continuous(breaks=seq(0, 120, 10), limits = c(0,120))+
+  scale_y_continuous(breaks=seq(0, 120, 10), limits = c(0, 120))+
   xlab("Cidades do estado do TX")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
@@ -726,7 +739,7 @@ Como esperado, a maioria das doação estão concentradas na parte leste do esta
 ia <- map_data("county", "texas")
 ggplot(ia, aes(long, lat)) +
   geom_polygon(aes(group = group), fill = NA, colour = "grey60") +
-  geom_point(aes(lon,lat), data = USACampaign, alpha = 0.05)+
+  geom_point(aes(lon, lat), data = USACampaign, alpha = 0.05)+
   ylim(25, 37)+
   xlim(-110, -90)
 
@@ -762,7 +775,7 @@ Com base nas análises, não consegui identificar nenhum relacionamento forte em
 No primeiro gráfico adicinamos a váriavel de cor ao gráfico apresentado na seção anterior para identificar as doações referente as primárias e as gerais. Nele fica ainda mais claro a mudança do destino das doaçoes republicanas para Donald Trump.
 
 ```{r echo=FALSE, warning=FALSE}
-ggplot(aes(y=cand_nm, x=contb_receipt_dt_month, color = election_tp), 
+ggplot(aes(y = cand_nm, x = contb_receipt_dt_month, color = election_tp), 
        data=subset(USACampaign, cand_nm %in% top7_cand))+
   geom_point(alpha = 1/100, position = 'jitter')+
   geom_vline(xintercept = as.Date("2016-05-01"), linetype = 3, color = 'red')+
@@ -784,10 +797,10 @@ Ted Cruz e Jeb Bush tiveram um apoio considerável em 2015 com as doações dos 
 
 ```{r echo=FALSE, warning = FALSE}
 
-ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, 
-           fill=contb_receipt_amt_range), 
-       data = subset(USACampaign, party %in% c("DEM","REP") & 
-                       contb_receipt_dt_year %in% c("15","16")))+
+ggplot(aes(x = contb_receipt_dt_month, y = contb_receipt_amt, 
+           fill = contb_receipt_amt_range), 
+       data = subset(USACampaign, party %in% c("DEM", "REP") & 
+                       contb_receipt_dt_year %in% c("15", "16")))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position = "bottom")+
@@ -796,9 +809,9 @@ ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt,
   labs(fill = "Faixa de valor")+
   facet_wrap(~party)
 
-ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, fill=cand_nm), 
-       data = subset(USACampaign, party %in% c("DEM","REP") & 
-                       contb_receipt_dt_year %in% c("15","16")))+
+ggplot(aes(x = contb_receipt_dt_month, y = contb_receipt_amt, fill  =cand_nm), 
+       data = subset(USACampaign, party %in% c("DEM", "REP") & 
+                       contb_receipt_dt_year %in% c("15", "16")))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
   geom_vline(xintercept = as.Date("2016-03-01"), linetype = 3)+
   geom_vline(xintercept = as.Date("2016-05-24"), linetype = 3)+
@@ -815,13 +828,13 @@ table(USACampaign$party, USACampaign$contb_receipt_amt_range)
 No gráfico seguinte, notamos que a maior parte doações acima de 2700 foram no ano de 2015 enquanto as doações de menores valores ocorreram principamente em 2016, o que explica o comportamente citados anteriormente.
 
 ```{r echo=FALSE, warning=FALSE}
-ggplot(aes(y = contb_receipt_amt, x=contb_receipt_dt_month, 
-           color=contb_receipt_amt_range),
+ggplot(aes(y = contb_receipt_amt, x = contb_receipt_dt_month, 
+           color = contb_receipt_amt_range),
        data = subset(USACampaign, 
                      lubridate::year(contb_receipt_dt_month) >= 2015 &
                        party %in% c("DEM","REP")))+
   geom_line(stat = 'summary', fun.y = sum)+
-  scale_y_continuous(breaks = seq(0,4e6,5e5))+
+  scale_y_continuous(breaks = seq(0, 4e6, 5e5))+
   scale_x_date(date_breaks = "2 months", 
                date_labels = "%b/%Y")+
   ylab('Valor total das doações')+
@@ -835,7 +848,7 @@ ggplot(aes(y = contb_receipt_amt, x=contb_receipt_dt_month,
 Por fim fiz uma análise das faixas de contribuição ao longo do tempo para os 2 candidatos que disputaram a presidencia em 2016. Nele fica claro mais uma vez o aumento de contribuições para **Donald Trump** após as primárias. Também vemos um crescimento das contribuições de menor valor para Hillary Clinton (até U$ 500).
 
 ```{r echo=FALSE, warning=FALSE}
-ggplot(aes(y=contb_receipt_amt, x=contb_receipt_dt_month, color=cand_nm), 
+ggplot(aes(y = contb_receipt_amt, x = contb_receipt_dt_month, color = cand_nm), 
        data = subset(USACampaign, cand_nm %in% c("Clinton, Hillary Rodham",
                                                  "Trump, Donald J.")))+
   geom_line(stat = 'summary', fun.y = sum)+
@@ -868,15 +881,15 @@ Um outro interação interessante foi a mudança das contribuições republicana
 
 top3_cand_total <- lista_ordenada("cand_nm", 3, ordenado_por = "total")$cand_nm
 
-ggplot(aes(x=contb_receipt_dt_month, y=contb_receipt_amt, 
-           fill=contb_receipt_amt_range), 
+ggplot(aes(x = contb_receipt_dt_month, y = contb_receipt_amt, 
+           fill = contb_receipt_amt_range), 
        data = subset(USACampaign, 
                      cand_nm %in% top3_cand_total & 
-                       contb_receipt_dt_year %in% c("15","16")))+
+                       contb_receipt_dt_year %in% c("15", "16")))+
   geom_bar(stat = 'summary', fun.y = 'sum')+
   theme(axis.text.x = element_text(angle = 45, hjust = 1), 
         legend.position = "bottom")+
-  scale_y_continuous(breaks=seq(0,4e6,5e5))+
+  scale_y_continuous(breaks = seq(0, 4e6, 5e5))+
   scale_x_date(date_breaks = "4 months", 
                date_minor_breaks = "2 months", 
                date_labels = "%b/%Y",
@@ -936,7 +949,7 @@ df <- USACampaign %>%
   summarise(qtde = n(), 
             total = sum(contb_receipt_amt)) 
 
-ggplot(aes(y = total, x=contb_receipt_dt_month, color=party),
+ggplot(aes(y = total, x = contb_receipt_dt_month, color = party),
        data = subset(df, lubridate::year(contb_receipt_dt_month) >= 2015))+
   geom_line(linetype = 3)+
   geom_point(aes(size = qtde), pch = 16)+
@@ -945,16 +958,40 @@ ggplot(aes(y = total, x=contb_receipt_dt_month, color=party),
                date_labels = "%b/%Y")+
   ylab('Valor total das doações')+
   xlab('Mês')+
+  labs(size = "Quantidade", color = "Partido")+
   theme(axis.text.x = element_text(angle = 45, hjust = 1))+
   ggtitle('Valor total vs Quantidade por partido, ao longo dos anos de 2015 e 2016')
+
+#Analise de valores vs quantidade para o primeiro trimestre de 2016
+with(subset(df, 
+            contb_receipt_dt_month >= as.Date("2016-01-01") & 
+            contb_receipt_dt_month <= as.Date("2016-03-31") ), 
+     by(qtde/sum(qtde), party, sum))
+
+with(subset(df, 
+            contb_receipt_dt_month >= as.Date("2016-01-01") & 
+            contb_receipt_dt_month <= as.Date("2016-03-31") ), 
+     by(total/sum(total), party, sum))
+
+#Analise de valores vs quantidade para o out/2016
+with(subset(df, 
+            contb_receipt_dt_month >= as.Date("2016-10-01") & 
+            contb_receipt_dt_month <= as.Date("2016-10-31") ), 
+     by(qtde/sum(qtde), party, sum))
+
+with(subset(df, 
+            contb_receipt_dt_month >= as.Date("2016-10-01") & 
+            contb_receipt_dt_month <= as.Date("2016-10-31") ), 
+     by(total/sum(total), party, sum))
+
 
 ```
 
 ### Descrição do Segundo Gráfico
 
-Neste gráfico procurei analisar o valor total de doações comparado a quantidade para os partidos. Nele fica claro a diferença no valor total de contribuições entre os partidos no ano de 2015 e inicio de 2016. Vemos que nos primeiros meses de 2016, embora a quantidade de contribuições tenha sido semelhantes, o valor arrecadado para os republicanos é bem maior.
+Neste gráfico procurei analisar o valor total de doações comparado a quantidade para os partidos. Nele fica claro a diferença no valor total de contribuições entre os partidos no ano de 2015 e inicio de 2016. Vemos que nos primeiros meses de 2016, embora a quantidade de contribuições tenha sido semelhantes (57% dos republicanos vs 43% dos democratas), o valor arrecadado para os republicanos é bem maior (70% dos republicanos vs 30% dos democratas).
 
-No segundo semestre de 2016, época das eleições gerais, vemos um comportamento interessante. Apesar dos democratas terem conseguido uma quantidade maior de doações, o republicanos receberam um montante maior. No mês de out/2016, com motante arrecadado bem próximo, fica bem claro que o valor médio das contribuições dos republicanos é maior neste periodo.
+No segundo semestre de 2016, época das eleições gerais, vemos um comportamento interessante. Apesar dos democratas terem conseguido uma quantidade maior de doações, o republicanos receberam um montante maior. No mês de out/2016, com motante arrecadado bem próximo, fica bem claro que o valor médio das contribuições dos republicanos é maior neste periodo. Neste mes tivemos 81,65% das doações para os democratas mas o valor total das contribuições equivaliam apenas a 49,3% do total.
 
 Como já haviamos notado nos histogramas, as quantidades de doações do demais partidos são insignificantes para nossa analise, tanto em valor total quanto em quantidade.
 
@@ -964,32 +1001,30 @@ Como já haviamos notado nos histogramas, as quantidades de doações do demais 
 
 #Para este gráfico optei fazer um gráfico para cada candidato ao invés de usar as opções de facet_wrap pois com este layer o espaço para a visualização do gráfico ficava muito reduzido.
 
-df_por_candidato <- function(candidato) {
-  
-  df <- subset(USACampaign, cand_nm == candidato) %>%
-    group_by(city) %>%
-    summarise(qtde = n(),
-              vr_total = sum(contb_receipt_amt),
-              vr_medio = mean(contb_receipt_amt)) %>%
-    arrange(desc(vr_total))
-  
-  df
-}
+df_por_candidato <- subset(USACampaign, 
+      city %in% lista_ordenada("city", 10, ordenado_por = "total")$city &
+      cand_nm %in% lista_ordenada("cand_nm", 7, ordenado_por = "total")$cand_nm) %>%
+  group_by(city, cand_nm) %>%
+  summarise(qtde = n(),
+            vr_total = sum(contb_receipt_amt),
+            vr_medio = mean(contb_receipt_amt)) %>%
+  arrange(desc(vr_total))
 
-gerar_grafico_por_candidato <- function(candidato) {
-    ggplot(aes(y = vr_total, x = as.factor(city), color = qtde, size = qtde), 
-           data = head(df_por_candidato(candidato), 10))+
-      geom_point()+
-      scale_y_continuous(limits = c(0, 8e6), breaks = seq(0, 8e6, 500000))+
-      ylab('Valor total das doações')+
-      xlab('Cidade')+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1))+
-      ggtitle(candidato)
-}
-
-for (i in 1:length(top7_cand)) {
-    print(gerar_grafico_por_candidato(as.character(top7_cand[i])))
-}
+ggplot(aes(y = vr_total, x = as.factor(city)), 
+       data = df_por_candidato)+
+  geom_point(aes(size = qtde, color = cand_nm))+
+  scale_y_continuous(limits = c(0, 8e6), breaks = seq(0, 8e6, 500000))+
+  scale_size_continuous(breaks = c(5000, 10000, 15000, 20000, 25000, 30000))+
+  ylab('Valor total das doações')+
+  xlab('Cidade')+
+  labs(size = "Quantidade", color = "Candidato")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        legend.position = c(.95, .95),
+        legend.justification = c("right", "top"),
+        legend.box.just = c("right", "top"),
+        legend.margin = margin(6, 6, 6, 6),
+        legend.box = "horizontal")+
+  ggtitle("Distribuição dos votos nas cidades, por candidato")
 
 lista_ordenada("city", 15)
 
@@ -1024,6 +1059,12 @@ Encontrei grandes dificuldades em se trabalhar com os mapas, principalmente devi
 ## Conclusão
 
 Apesar das dificuldades encontradas para a execução do trabalho, acredito que eu tenho obtido sucesso nas análises realizadas, conseguindo identificar o comportamento das doações realizadas na campanha presidencial de 2016 para o estado do Texas.
+
+Durante as análises, foi interessante o comportamenta das doações para as eleições primárias e a gerais, mostrando como o canditato **Donald Trump** que não estava entre o candidatos com mais doações na primárias se tornou a opção dos republicanos. 
+
+Outro ponto interessante foi visualizar como o candidato **Ted Cruz**, vencedor das eleições primárias no estado, foi o destino da grande parte das doações acima do U$ 5.400,00 (199 de 210).
+
+Nas analises também podemos ver que, de forma geral, os republicanos foram os alvos preferidos da contribuições do estado do Texas, principalmente quando analisamos o ano de 2015.
 
 ## Futuros trabalhos
 
