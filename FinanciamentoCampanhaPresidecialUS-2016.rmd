@@ -251,7 +251,7 @@ O dataset tratado contem 548.396 observações com 29 variaveis. O dataset origi
 
 # Seção de Gráficos Univariados
 
-É importante realizarmos uma analise sobre a distribuição das contribuições entre os candidatos. Para uma melhor compreensão das doações entre os candidatos, agrupei o mesmo histograma de 2 formas: _a primeira, pela quantidade de doações e a segunda pelo valor total arrecadado._
+É importante realizarmos uma analise sobre a distribuição das contribuições entre os candidatos. Para uma melhor compreensão das doações entre os candidatos, gerei dois graficos: _o primeira, com a quantidade de doações por candidato e o segundo com o valor total arrecadado._
 
 Nesta análise percebemos que a maior quantidade de doações se concentram nos 4 primeiros candidatos, mas é importante notar que quando ordenamos por valor total arrecadado, existe um inversão nas posições. Devido a essa inversão farei uma análise focada nos 7 candidatos com maior volume arrecada, no lugar de 5 candidatos que era a idéia inicial.
 
